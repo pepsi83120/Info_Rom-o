@@ -1,28 +1,17 @@
-# Dossier a importer
+# Version gratuite Render
 
-Ce dossier contient tout ce qu'il faut pour heberger La villa Romeo Admin.
+Ce dossier est configure pour Render Free.
 
-## A importer sur GitHub
+## Important
 
-Importe tout le contenu de ce dossier dans un nouveau repo GitHub :
+Cette version ne demande pas de carte bancaire, mais elle n'a pas de disque persistant.
+Les donnees peuvent etre perdues si Render redemarre ou redeploie le service.
 
-- `index.html`
-- `guest.html`
-- `src/`
-- `storage/`
-- `server.js`
-- `package.json`
-- `render.yaml`
-- `README.md`
-- `.gitignore`
+## A faire
 
-## Deploiement Render
+1. Remplace les fichiers de ton repo GitHub `Info-Romeo` par le contenu de ce dossier.
+2. Verifie que `render.yaml` est bien a la racine du repo.
+3. Retourne sur Render.
+4. Clique `Retry`.
 
-1. Va sur Render.
-2. Cree un nouveau Blueprint.
-3. Connecte le repo GitHub qui contient ces fichiers.
-4. Render detectera `render.yaml`.
-5. Le site sera lance avec `npm start`.
-6. Le dossier `/data` sera utilise pour garder les donnees sauvegardees.
-
-Une fois le site en ligne, les QR codes utiliseront automatiquement l'URL publique Render.
+Le fichier `render.yaml` doit indiquer `plan: free` et ne doit pas contenir de section `disk`.
