@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: villa-romeo-admin
+    runtime: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: STORAGE_DIR
+        value: /data
+    disk:
+      name: villa-romeo-data
+      mountPath: /data
+      sizeGB: 1

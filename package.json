@@ -1,0 +1,12 @@
+{
+  "name": "villa-romeo-admin",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Panel admin pour La villa Romeo.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js"
+  }
+}
