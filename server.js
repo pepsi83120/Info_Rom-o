@@ -2,11 +2,13 @@ const http = require("http");
 const https = require("https");
 const fs = require("fs");
 const path = require("path");
+const webpush = require("web-push");
 
 const root = __dirname;
 const storageDir = process.env.STORAGE_DIR || path.join(root, "storage");
 const stateFile = path.join(storageDir, "state.json");
 const bundledStateFile = path.join(root, "storage", "state.json");
+const subscriptionsFile = path.join(storageDir, "subscriptions.json");
 const port = Number(process.env.PORT || 4174);
 const host = process.env.HOST || "0.0.0.0";
 const displayHost = host === "0.0.0.0" ? "localhost" : host;
@@ -18,6 +20,54 @@ const types = {
   ".md": "text/markdown; charset=utf-8"
 };
 
+const VAPID_PUBLIC_KEY = "BAZT7ymj3mVaYdnXXxQRCyPuKPdA_bgaNHY96_BG8ueJ0W-zZLz00h-pbGH-7Yxxiv0Iq6yoEWZUEMzngUT5CZw";
+const VAPID_PRIVATE_KEY = "WqRGxa4UDrnpjIXtF_j-1AXRUVJQNfHdTVpp0G5eQ4w";
+const VAPID_SUBJECT = "mailto:info@lavillaromeo.fr";
+
+webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+
+function loadSubscriptions() {
+  try {
+    const raw = fs.readFileSync(subscriptionsFile, "utf8");
+    return JSON.parse(raw || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function saveSubscriptions(subs) {
+  fs.mkdirSync(storageDir, { recursive: true });
+  fs.writeFileSync(subscriptionsFile, JSON.stringify(subs, null, 2), "utf8");
+}
+
+async function sendPushToAll(payload) {
+  const subs = loadSubscriptions();
+  const dead = [];
+  for (const sub of subs) {
+    try {
+      await webpush.sendNotification(sub, JSON.stringify(payload));
+    } catch (err) {
+      if (err.statusCode === 410 || err.statusCode === 404) dead.push(sub.endpoint);
+    }
+  }
+  if (dead.length) {
+    saveSubscriptions(subs.filter(s => !dead.includes(s.endpoint)));
+  }
+}
+
+async function sendPushToEndpoint(endpoint, payload) {
+  const subs = loadSubscriptions();
+  const sub = subs.find(s => s.endpoint === endpoint);
+  if (!sub) return;
+  try {
+    await webpush.sendNotification(sub, JSON.stringify(payload));
+  } catch (err) {
+    if (err.statusCode === 410 || err.statusCode === 404) {
+      saveSubscriptions(subs.filter(s => s.endpoint !== endpoint));
+    }
+  }
+}
+
 const server = http.createServer((request, response) => {
   const url = new URL(request.url, `http://${displayHost}:${port}`);
 
@@ -28,6 +78,93 @@ const server = http.createServer((request, response) => {
 
   if (url.pathname === "/api/ics") {
     handleIcsApi(url, response);
+    return;
+  }
+
+  if (url.pathname === "/api/push/vapid-public-key" && request.method === "GET") {
+    response.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+    response.end(JSON.stringify({ key: VAPID_PUBLIC_KEY }));
+    return;
+  }
+
+  if (url.pathname === "/api/push/subscribe" && request.method === "POST") {
+    readBody(request, (body) => {
+      try {
+        const subscription = JSON.parse(body);
+        const subs = loadSubscriptions();
+        const exists = subs.find(s => s.endpoint === subscription.endpoint);
+        if (!exists) {
+          subs.push(subscription);
+          saveSubscriptions(subs);
+        }
+        response.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+        response.end(JSON.stringify({ ok: true }));
+      } catch {
+        response.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+        response.end(JSON.stringify({ ok: false }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === "/api/push/unsubscribe" && request.method === "POST") {
+    readBody(request, (body) => {
+      try {
+        const { endpoint } = JSON.parse(body);
+        const subs = loadSubscriptions().filter(s => s.endpoint !== endpoint);
+        saveSubscriptions(subs);
+        response.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+        response.end(JSON.stringify({ ok: true }));
+      } catch {
+        response.writeHead(400);
+        response.end();
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === "/api/push/send" && request.method === "POST") {
+    readBody(request, async (body) => {
+      try {
+        const { title, body: msgBody, icon, badge, tag, endpoint } = JSON.parse(body);
+        const payload = {
+          title: title || "La villa Roméo",
+          body: msgBody || "",
+          icon: icon || "/assets/icons/icon-192.png",
+          badge: badge || "/assets/icons/favicon-32.png",
+          tag: tag || "villa-romeo",
+          timestamp: Date.now()
+        };
+        if (endpoint) {
+          await sendPushToEndpoint(endpoint, payload);
+        } else {
+          await sendPushToAll(payload);
+        }
+        response.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+        response.end(JSON.stringify({ ok: true }));
+      } catch (err) {
+        response.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+        response.end(JSON.stringify({ ok: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === "/api/push/test" && request.method === "POST") {
+    sendPushToAll({
+      title: "La villa Roméo",
+      body: "Test de notification — tout fonctionne !",
+      icon: "/assets/icons/icon-192.png",
+      badge: "/assets/icons/favicon-32.png",
+      tag: "villa-romeo-test",
+      timestamp: Date.now()
+    }).then(() => {
+      response.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+      response.end(JSON.stringify({ ok: true }));
+    }).catch(err => {
+      response.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+      response.end(JSON.stringify({ ok: false, error: err.message }));
+    });
     return;
   }
 
@@ -51,6 +188,15 @@ const server = http.createServer((request, response) => {
     response.end(content);
   });
 });
+
+function readBody(request, callback) {
+  let body = "";
+  request.on("data", chunk => {
+    body += chunk;
+    if (body.length > 5_000_000) request.destroy();
+  });
+  request.on("end", () => callback(body));
+}
 
 function handleStateApi(request, response) {
   if (request.method === "GET") {
@@ -76,12 +222,7 @@ function handleStateApi(request, response) {
   }
 
   if (request.method === "POST") {
-    let body = "";
-    request.on("data", chunk => {
-      body += chunk;
-      if (body.length > 5_000_000) request.destroy();
-    });
-    request.on("end", () => {
+    readBody(request, (body) => {
       try {
         const parsed = JSON.parse(body || "{}");
         fs.mkdirSync(storageDir, { recursive: true });
@@ -187,4 +328,5 @@ function handleIcsApi(url, response) {
 
 server.listen(port, host, () => {
   console.log(`La villa Romeo Admin running at http://${displayHost}:${port}`);
+  console.log(`Push notifications: ${loadSubscriptions().length} abonne(s)`);
 });

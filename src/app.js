@@ -11,6 +11,9 @@ const ADMIN_CREDENTIALS = {
   password: "Jajap00mp00m*"
 };
 
+const VAPID_PUBLIC_KEY = "BAZT7ymj3mVaYdnXXxQRCyPuKPdA_bgaNHY96_BG8ueJ0W-zZLz00h-pbGH-7Yxxiv0Iq6yoEWZUEMzngUT5CZw";
+let pushSubscription = null;
+
 let installPromptEvent = null;
 let state = loadState();
 let isAdminAuthenticated = localStorage.getItem(ADMIN_AUTH_KEY) === "ok";
@@ -57,6 +60,19 @@ function startAdminApp() {
   syncServerState();
   clearInterval(syncTimer);
   syncTimer = setInterval(() => syncServerState(false), 20000);
+  checkExistingPushSubscription();
+}
+
+async function checkExistingPushSubscription() {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      pushSubscription = sub;
+      renderSettings();
+    }
+  } catch {}
 }
 
 function renderLoginChoice(mode = "admin", error = "") {
@@ -278,6 +294,9 @@ function handleAction(action, button) {
     "logout-admin": () => logoutAdmin(),
     "toggle-notifications": () => toggleNotifications(),
     "enable-notifications": () => enableBrowserNotifications(),
+    "subscribe-push": () => subscribePush(),
+    "unsubscribe-push": () => unsubscribePush(),
+    "test-push": () => testPush(),
     "clear-admin-notifications": () => clearAdminNotifications(),
     "open-notification": () => openNotification(button.dataset.targetView, id),
     "open-guest": () => openGuestPortal(),
@@ -1254,8 +1273,105 @@ async function enableBrowserNotifications() {
     return;
   }
   const result = Notification.permission === "default" ? await Notification.requestPermission() : Notification.permission;
-  toast(result === "granted" ? "Notifications navigateur activees." : "Notifications navigateur non autorisees.");
+  if (result === "granted") {
+    toast("Notifications activees. Abonnement en cours...");
+    await subscribePush();
+  } else {
+    toast("Notifications non autorisees.");
+  }
   renderNotificationPanel();
+  renderSettings();
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  return new Uint8Array([...rawData].map(c => c.charCodeAt(0)));
+}
+
+async function subscribePush() {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+    toast("Push non supporte sur ce navigateur.");
+    return;
+  }
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const existing = await reg.pushManager.getSubscription();
+    if (existing) {
+      pushSubscription = existing;
+      await fetch("./api/push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(existing)
+      });
+      toast("Deja abonne aux notifications push.");
+      renderSettings();
+      return;
+    }
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    });
+    pushSubscription = sub;
+    await fetch("./api/push/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(sub)
+    });
+    toast("Notifications push activees sur cet appareil !");
+    renderSettings();
+  } catch (err) {
+    console.warn("Push subscribe error:", err);
+    toast("Impossible d'activer les notifications push.");
+  }
+}
+
+async function unsubscribePush() {
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      await fetch("./api/push/unsubscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ endpoint: sub.endpoint })
+      });
+      await sub.unsubscribe();
+      pushSubscription = null;
+      toast("Notifications push desactivees.");
+      renderSettings();
+    } else {
+      toast("Aucun abonnement actif.");
+    }
+  } catch (err) {
+    toast("Erreur lors de la desinscription.");
+  }
+}
+
+async function testPush() {
+  try {
+    const response = await fetch("./api/push/test", { method: "POST" });
+    const data = await response.json();
+    if (data.ok) {
+      toast("Notification test envoyee !");
+    } else {
+      toast("Erreur : " + (data.error || "inconnue"));
+    }
+  } catch {
+    toast("Impossible d'envoyer la notification test.");
+  }
+}
+
+async function sendPushNotification(title, body, tag = "villa-romeo") {
+  try {
+    await fetch("./api/push/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, body, tag })
+    });
+  } catch {
+  }
 }
 
 function clearAdminNotifications() {
@@ -1381,6 +1497,31 @@ function renderSettings() {
     <div class="panel" style="margin-top:18px;">
       <div class="panel-head">
         <div>
+          <div class="section-title">Notifications push</div>
+          <div class="section-copy">Recois des vraies notifications sur ton telephone meme quand l'app est fermee.</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn primary" data-action="enable-notifications"><i class="ti ti-bell-ringing"></i>Activer</button>
+          <button class="btn" data-action="test-push"><i class="ti ti-send"></i>Tester</button>
+          <button class="btn danger" data-action="unsubscribe-push"><i class="ti ti-bell-off"></i>Desactiver</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="info-list" style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:13px;color:var(--muted);">
+            <b>Statut :</b> ${pushStatusLabel()}
+          </div>
+          <div style="font-size:13px;color:var(--muted);">
+            1. Clique sur <b>Activer</b> et autorise les notifications.<br>
+            2. Clique sur <b>Tester</b> pour recevoir une notif de test.<br>
+            3. Les notifications arrivent automatiquement pour les nouveaux messages et petits-dejeuners.
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:18px;">
+      <div class="panel-head">
+        <div>
           <div class="section-title">Session admin</div>
           <div class="section-copy">Fermer l'acces administration sur cet appareil.</div>
         </div>
@@ -1388,6 +1529,14 @@ function renderSettings() {
       </div>
     </div>
   `;
+}
+
+function pushStatusLabel() {
+  if (!("Notification" in window)) return "Non supporte sur ce navigateur.";
+  if (Notification.permission === "denied") return "<span style=\"color:var(--red)\">Bloque par le navigateur. Autorise dans les reglages.</span>";
+  if (Notification.permission === "granted" && pushSubscription) return "<span style=\"color:var(--green)\">Actif — cet appareil recoit les notifications.</span>";
+  if (Notification.permission === "granted") return "<span style=\"color:var(--gold)\">Permission accordee, en cours d'abonnement...</span>";
+  return "Non active. Clique sur Activer.";
 }
 
 function suiteCard(s) {
@@ -1879,6 +2028,13 @@ function saveBreakfastFromModal() {
   upsert("breakfasts", payload);
   closeModal();
   persist("Petit-dejeuner enregistre.");
+  if (!modalEntityId) {
+    sendPushNotification(
+      "La villa Romeo - Petit-dejeuner",
+      `Nouvelle demande pour ${esc(suiteName(payload.suiteId))} le ${payload.date} a ${payload.time}`,
+      "villa-romeo-breakfast"
+    );
+  }
 }
 
 function saveTaskFromModal() {
@@ -1962,6 +2118,11 @@ function saveMessageFromModal() {
   }
   closeModal();
   persist("Message envoye au portail client.");
+  sendPushNotification(
+    "La villa Romeo - Nouveau message",
+    `${esc(payload.subject)} - ${esc(suiteName(payload.suiteId))}`,
+    "villa-romeo-message"
+  );
 }
 
 function saveServiceFromModal() {
