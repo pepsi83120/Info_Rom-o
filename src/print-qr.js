@@ -46,16 +46,22 @@ function render() {
           <div class="brand-name">${esc(state.settings.propertyName)}</div>
           <div class="mark">M</div>
         </div>
-        <div class="eyebrow">Guide digital invite</div>
+        <div class="eyebrow">Flyer invite A5</div>
         <h1>${esc(suite.name)}</h1>
-        <p class="subtitle">Scannez le QR code pour ouvrir l'espace client du logement.</p>
+        <p class="subtitle">Votre guide digital pendant le sejour.</p>
       </section>
 
       <section class="content">
+        <div class="intro">
+          <div class="intro-kicker">Bienvenue</div>
+          <div class="intro-title">Scannez le QR code</div>
+          <p>Acces Wi-Fi, horaires, messages, petit-dejeuner et informations utiles du logement.</p>
+        </div>
         <div class="qr-wrap">
           <img class="qr" src="${escAttr(qrImageUrl(url, 520))}" alt="QR ${escAttr(suite.name)}">
         </div>
         <div class="url">${esc(url)}</div>
+        <div class="access-title">Acces client</div>
         <div class="credentials">
           <div class="credential">
             <div class="label">Identifiant</div>
