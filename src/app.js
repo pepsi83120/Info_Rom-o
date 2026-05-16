@@ -68,9 +68,9 @@ function renderAdminLogin(error = "") {
 
   document.getElementById("adminLoginForm").addEventListener("submit", event => {
     event.preventDefault();
-    const username = value("adminUsername").trim();
-    const password = value("adminPassword");
-    if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+    const username = val("adminUsername");
+    const password = val("adminPassword");
+    if (sameCredential(username, ADMIN_CREDENTIALS.username) && password === ADMIN_CREDENTIALS.password) {
       localStorage.setItem(ADMIN_AUTH_KEY, "ok");
       isAdminAuthenticated = true;
       startAdminApp();
@@ -79,6 +79,19 @@ function renderAdminLogin(error = "") {
 
     renderAdminLogin("Identifiant ou mot de passe incorrect.");
   });
+}
+
+function sameCredential(input, expected) {
+  return normalizeCredential(input) === normalizeCredential(expected);
+}
+
+function normalizeCredential(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
 }
 
 async function syncServerState() {
