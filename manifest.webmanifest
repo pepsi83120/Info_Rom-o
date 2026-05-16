@@ -2,7 +2,7 @@
   "name": "La Villa Romeo",
   "short_name": "Villa Romeo",
   "description": "Application admin et portail client de La Villa Romeo.",
-  "start_url": "/",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
   "background_color": "#1f979a",

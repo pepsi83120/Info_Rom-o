@@ -966,7 +966,7 @@ select:focus {
   }
 
   .guest-shell {
-    padding-bottom: calc(78px + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
   .guest-nav {
@@ -977,7 +977,7 @@ select:focus {
     grid-template-columns: minmax(0, 1fr);
     padding: 10px 12px;
     min-height: 0;
-    gap: 9px;
+    gap: 8px;
   }
 
   .brand {
@@ -991,8 +991,8 @@ select:focus {
   }
 
   .brand-name {
-    font-size: 24px;
-    max-width: calc(100vw - 74px);
+    font-size: 23px;
+    max-width: calc(100vw - 78px);
     white-space: normal;
     line-height: .95;
   }
@@ -1003,24 +1003,20 @@ select:focus {
 
   .install-btn {
     width: 100%;
-    min-height: 44px;
-    border-radius: 14px;
+    min-height: 46px;
+    border-radius: 12px;
+    font-size: 15px;
   }
 
   .nav-actions {
-    position: fixed;
-    left: 10px;
-    right: 10px;
-    bottom: calc(10px + env(safe-area-inset-bottom));
-    z-index: 50;
     display: grid;
-    grid-template-columns: 48px 1fr 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
-    padding: 8px;
+    padding: 0;
     border: 1px solid rgba(221, 194, 130, .18);
-    border-radius: 18px;
-    background: rgba(10, 14, 16, .94);
-    box-shadow: 0 16px 46px rgba(0,0,0,.44);
+    border-radius: 14px;
+    background: rgba(10, 14, 16, .58);
+    box-shadow: none;
     backdrop-filter: blur(18px);
   }
 
@@ -1030,13 +1026,14 @@ select:focus {
 
   .nav-actions .btn {
     width: 100%;
-    min-height: 48px;
-    padding: 10px;
-    border-radius: 14px;
+    min-height: 42px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    font-size: 13px;
   }
 
   .nav-actions .btn.icon {
-    width: 48px;
+    width: 100%;
   }
 
   .hero {
@@ -1046,8 +1043,8 @@ select:focus {
   }
 
   .hero-copy {
-    padding: 28px 16px 18px;
-    gap: 22px;
+    padding: 22px 16px 18px;
+    gap: 18px;
   }
 
   .eyebrow {
@@ -1057,7 +1054,7 @@ select:focus {
 
   .hero h1 {
     margin: 10px 0 12px;
-    font-size: 48px;
+    font-size: 42px;
     line-height: .88;
   }
 
@@ -1088,7 +1085,7 @@ select:focus {
   }
 
   .hero-visual {
-    min-height: 285px;
+    min-height: 230px;
     order: -1;
   }
 
@@ -1097,11 +1094,11 @@ select:focus {
     right: 14px;
     bottom: 14px;
     border-radius: 14px;
-    padding: 14px;
+    padding: 12px;
   }
 
   .suite-floating h2 {
-    font-size: 29px;
+    font-size: 24px;
   }
 
   .suite-floating p {
@@ -1328,20 +1325,26 @@ select:focus {
 
 @media (max-width: 420px) {
   .nav-actions {
-    grid-template-columns: 44px 1fr 1fr 1fr;
-    left: 6px;
-    right: 6px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 6px;
   }
 
   .nav-actions .btn {
-    font-size: 11px;
+    font-size: 12px;
     gap: 5px;
     padding: 8px 6px;
   }
 
   .hero h1 {
-    font-size: 42px;
+    font-size: 36px;
+  }
+
+  .hero-visual {
+    min-height: 210px;
+  }
+
+  .suite-floating h2 {
+    font-size: 21px;
   }
 
   .quick-card {

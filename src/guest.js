@@ -17,6 +17,10 @@ window.addEventListener("beforeinstallprompt", event => {
   installPromptEvent = event;
 });
 
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js").catch(() => {});
+}
+
 function bootGuest() {
   render();
   if (guestSession) syncServerState();
@@ -88,7 +92,7 @@ function render() {
             <div class="brand-sub">${esc(state.settings.descriptor || "Portail invite")}</div>
           </div>
         </div>
-        <button class="btn install-btn" data-action="install-app"><i class="ti ti-device-mobile-down"></i><span>Télécharger l'appli</span></button>
+        <button class="btn install-btn" data-action="install-app"><i class="ti ti-device-mobile-down"></i><span>Installer l'appli</span></button>
         <div class="nav-actions">
           <button class="btn icon" data-action="copy-wifi" aria-label="Copier Wi-Fi"><i class="ti ti-wifi"></i></button>
           <button class="btn" data-action="modal" data-modal="message"><i class="ti ti-message-circle"></i><span>Message</span></button>

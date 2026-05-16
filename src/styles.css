@@ -1706,6 +1706,7 @@ tbody tr:hover td {
     min-height: 44px;
     padding: 9px 10px;
     border-radius: 12px;
+    font-size: 13px;
   }
 
   .top-actions .install-btn {
@@ -1798,7 +1799,11 @@ tbody tr:hover td {
 
 @media (max-width: 430px) {
   .top-actions {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .top-actions .install-btn {
+    grid-column: 1 / -1;
   }
 
   .hero-title {

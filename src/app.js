@@ -32,6 +32,10 @@ window.addEventListener("beforeinstallprompt", event => {
   installPromptEvent = event;
 });
 
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js").catch(() => {});
+}
+
 function boot() {
   if (!isAdminAuthenticated) {
     renderAdminLogin();
@@ -144,7 +148,7 @@ function shell() {
             </div>
           </div>
           <div class="top-actions">
-            <button class="btn install-btn" data-action="install-app"><i class="ti ti-device-mobile-down"></i> Télécharger l'appli</button>
+            <button class="btn install-btn" data-action="install-app"><i class="ti ti-device-mobile-down"></i> Installer l'appli</button>
             <button class="btn icon" data-view="messages" aria-label="Messages">
               <i class="ti ti-bell"></i>
               <span class="notification-dot" id="notificationDot"></span>
