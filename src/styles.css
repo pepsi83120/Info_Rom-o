@@ -557,6 +557,18 @@ button {
   overflow: hidden;
 }
 
+.hero-art.dashboard-photo {
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.04), rgba(0,0,0,.28)),
+    url("../assets/dashboard-pool.png") center / cover no-repeat,
+    linear-gradient(135deg, var(--gold), var(--clay) 45%, var(--blue));
+}
+
+.hero-art.dashboard-photo::before,
+.hero-art.dashboard-photo::after {
+  display: none;
+}
+
 .hero-art::before,
 .hero-art::after {
   content: "";

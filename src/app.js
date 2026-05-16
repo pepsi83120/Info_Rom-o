@@ -420,7 +420,7 @@ function renderHeader() {
 function renderDashboard() {
   const container = document.getElementById("view-dashboard");
   const revenue = state.reservations.reduce((sum, r) => sum + Number(r.total || 0), 0);
-  const occupied = state.suites.filter(s => s.status === "occupied").length;
+  const occupied = occupiedSuiteIdsToday().size;
   const ready = state.suites.filter(s => s.housekeeping === "ready").length;
   const unread = state.messages.filter(m => m.status === "unread").length;
   const yearly = yearlyAnalytics();
@@ -441,7 +441,7 @@ function renderDashboard() {
               ${heroMetric(String(unread), "Messages urgents")}
             </div>
           </div>
-          <div class="hero-art"></div>
+          <div class="hero-art dashboard-photo" aria-label="Piscine La villa Romeo"></div>
         </div>
         <div class="stats">
           ${statCard("Occupation", pct(occupied, state.suites.length), `${occupied} logements occupes`)}
@@ -487,6 +487,33 @@ function renderDashboard() {
     </div>
     <div class="suite-grid">${state.suites.map(suiteCard).join("")}</div>
   `;
+}
+
+function occupiedSuiteIdsToday() {
+  const occupiedIds = new Set(
+    state.suites
+      .filter(suite => suite.status === "occupied")
+      .map(suite => Number(suite.id))
+  );
+
+  state.reservations.forEach(reservation => {
+    if (reservationOccupiesToday(reservation)) {
+      occupiedIds.add(Number(reservation.suiteId));
+    }
+  });
+
+  return occupiedIds;
+}
+
+function reservationOccupiesToday(reservation) {
+  if (!reservation) return false;
+  if (reservation.status === "inhouse") return true;
+  if (["checkout", "cancelled", "raw"].includes(reservation.status)) return false;
+
+  const todayDate = startOfDay(new Date());
+  const arrival = parseDate(reservation.arrival);
+  const departure = parseDate(reservation.departure);
+  return Boolean(arrival && departure && arrival <= todayDate && todayDate < departure);
 }
 
 function renderAnalytics() {
