@@ -234,6 +234,18 @@ function render() {
           </div>
         </section>
 
+        <section>
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <div class="panel-title">Parametres</div>
+                <div class="panel-sub">Session client sur cet appareil.</div>
+              </div>
+              <button class="btn danger" data-action="logout"><i class="ti ti-logout"></i><span>Se deconnecter</span></button>
+            </div>
+          </div>
+        </section>
+
         <footer class="footer">
           <div>${esc(state.settings.guestFooterText || state.settings.propertyName)}</div>
           <div>${esc(state.settings.phone)} - ${esc(state.settings.email)}</div>

@@ -1175,6 +1175,15 @@ function renderSettings() {
         </div>
       </div>
     </div>
+    <div class="panel" style="margin-top:18px;">
+      <div class="panel-head">
+        <div>
+          <div class="section-title">Session admin</div>
+          <div class="section-copy">Fermer l'acces administration sur cet appareil.</div>
+        </div>
+        <button class="btn danger" data-action="logout-admin"><i class="ti ti-logout"></i>Se deconnecter</button>
+      </div>
+    </div>
   `;
 }
 
