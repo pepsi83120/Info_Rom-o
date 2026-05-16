@@ -1,22 +1,22 @@
 :root {
-  --ink: #f5efe4;
-  --muted: #a8afb2;
-  --soft: #b9a77f;
-  --paper: #101619;
-  --cream: #1b2327;
-  --cream-2: #252d31;
-  --line: rgba(221, 194, 130, .16);
-  --navy: #0f1518;
-  --navy-2: #1c262b;
-  --gold: #c9a765;
-  --gold-2: #e5c77d;
-  --blue: #4a8fa8;
-  --sage: #6f8367;
-  --clay: #a5685d;
-  --danger: #c84e35;
+  --ink: #17333a;
+  --muted: #5f7479;
+  --soft: #6aaeb0;
+  --paper: #f6fbfb;
+  --cream: #eef8f7;
+  --cream-2: #dff1ee;
+  --line: rgba(31, 154, 160, .18);
+  --navy: #1f9aa0;
+  --navy-2: #67c8c8;
+  --gold: #f2b66d;
+  --gold-2: #ffd895;
+  --blue: #61b8d2;
+  --sage: #70b48f;
+  --clay: #ef8f72;
+  --danger: #d85f49;
   --ok: #356d35;
-  --shadow: 0 28px 80px rgba(0, 0, 0, .36);
-  --shadow-sm: 0 10px 32px rgba(0, 0, 0, .24);
+  --shadow: 0 28px 80px rgba(24, 113, 122, .16);
+  --shadow-sm: 0 10px 32px rgba(24, 113, 122, .11);
   --radius: 18px;
   --radius-sm: 11px;
 }
@@ -35,9 +35,9 @@ body {
   font-family: "Inter", system-ui, sans-serif;
   color: var(--ink);
   background:
-    radial-gradient(circle at top left, rgba(201, 167, 101, .18), transparent 28rem),
-    radial-gradient(circle at bottom right, rgba(88, 127, 140, .16), transparent 28rem),
-    linear-gradient(135deg, #090d0f, #151c20 46%, #0c1012);
+    radial-gradient(circle at top left, rgba(97, 184, 210, .24), transparent 28rem),
+    radial-gradient(circle at bottom right, rgba(242, 182, 109, .24), transparent 28rem),
+    linear-gradient(135deg, #f6fbfb, #eaf7f5 48%, #fff5e6);
 }
 
 body,
@@ -88,7 +88,7 @@ div {
   padding: 30px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: rgba(19, 25, 29, .9);
+  background: rgba(255,255,255,.86);
   box-shadow: var(--shadow);
 }
 
@@ -129,8 +129,8 @@ div {
   padding: 12px 14px;
   border: 1px solid rgba(200, 78, 53, .4);
   border-radius: var(--radius-sm);
-  color: #ffd8ce;
-  background: rgba(200, 78, 53, .14);
+  color: #8f2f20;
+  background: rgba(216, 95, 73, .12);
   font-weight: 700;
 }
 
@@ -147,7 +147,7 @@ div {
   justify-content: space-between;
   gap: 18px;
   padding: 14px clamp(16px, 4vw, 42px);
-  background: rgba(12, 16, 18, .82);
+  background: rgba(246,251,251,.78);
   border-bottom: 1px solid var(--line);
   backdrop-filter: blur(18px);
 }
@@ -198,8 +198,8 @@ div {
 }
 
 .install-btn {
-  border-color: rgba(201, 167, 101, .46);
-  color: #111719;
+  border-color: rgba(242, 182, 109, .58);
+  color: #17333a;
   background: linear-gradient(135deg, var(--gold), var(--gold-2));
   font-weight: 900;
   white-space: nowrap;
@@ -208,7 +208,7 @@ div {
 .btn {
   min-height: 40px;
   border: 1px solid var(--line);
-  background: rgba(24, 31, 35, .86);
+  background: rgba(255,255,255,.72);
   color: var(--ink);
   border-radius: 999px;
   padding: 9px 15px;
@@ -225,19 +225,19 @@ div {
 .btn:hover {
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
-  background: rgba(34,43,48,.94);
+  background: rgba(255,255,255,.95);
 }
 
 .btn.primary {
   color: white;
   border-color: var(--navy);
-  background: linear-gradient(135deg, var(--navy), var(--navy-2));
+  background: linear-gradient(135deg, var(--navy), #147982);
 }
 
 .btn.gold {
   color: white;
   border-color: var(--gold);
-  background: linear-gradient(135deg, var(--gold), #96733b);
+  background: linear-gradient(135deg, var(--gold), #e08f63);
 }
 
 .btn.icon {
@@ -249,7 +249,9 @@ div {
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(320px, .95fr);
   min-height: calc(100vh - 72px);
-  background: linear-gradient(135deg, rgba(12, 16, 18, .98), rgba(30, 39, 43, .92));
+  background:
+    radial-gradient(circle at 82% 16%, rgba(255,216,149,.38), transparent 18rem),
+    linear-gradient(135deg, #168f98, #55c7c1 55%, #f2b66d);
   color: white;
 }
 
@@ -405,7 +407,7 @@ div {
 .suite-picker {
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: rgba(19,25,29,.88);
+  background: rgba(255,255,255,.84);
   box-shadow: 0 1px 0 rgba(255,255,255,.05) inset, var(--shadow-sm);
 }
 
@@ -508,7 +510,7 @@ select {
   min-height: 44px;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  background: rgba(10,14,16,.74);
+  background: rgba(255,255,255,.82);
   color: var(--ink);
   padding: 11px 12px;
   outline: none;
@@ -524,9 +526,9 @@ textarea {
 input:focus,
 textarea:focus,
 select:focus {
-  border-color: rgba(201,167,101,.62);
-  background: rgba(14,19,22,.96);
-  box-shadow: 0 0 0 3px rgba(201,167,101,.14);
+  border-color: rgba(31,154,160,.56);
+  background: rgba(255,255,255,.98);
+  box-shadow: 0 0 0 3px rgba(97,184,210,.18);
 }
 
 .save-row {
@@ -961,8 +963,8 @@ select:focus {
 @media (max-width: 720px) {
   body {
     background:
-      linear-gradient(180deg, rgba(201, 167, 101, .12), transparent 260px),
-      linear-gradient(135deg, #090d0f, #141b1f 54%, #0c1012);
+      linear-gradient(180deg, rgba(97,184,210,.16), transparent 260px),
+      linear-gradient(135deg, #f6fbfb, #eaf7f5 54%, #fff5e6);
   }
 
   .guest-shell {
@@ -1013,9 +1015,9 @@ select:focus {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
     padding: 0;
-    border: 1px solid rgba(221, 194, 130, .18);
+    border: 1px solid rgba(31,154,160,.18);
     border-radius: 14px;
-    background: rgba(10, 14, 16, .58);
+    background: rgba(255,255,255,.68);
     box-shadow: none;
     backdrop-filter: blur(18px);
   }
@@ -1278,7 +1280,7 @@ select:focus {
     position: sticky;
     top: 0;
     z-index: 1;
-    background: rgba(19,25,29,.96);
+    background: rgba(255,255,255,.94);
     backdrop-filter: blur(14px);
     padding: 15px;
   }
