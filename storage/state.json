@@ -47,6 +47,10 @@
     {
       "id": 1,
       "name": "Mini villa rose",
+      "clientLogin": {
+        "username": "Mini villa rose",
+        "password": "Minivillarose48291"
+      },
       "category": "Hebergement de charme",
       "publicName": "Mini villa rose",
       "villaType": "Hebergement de charme",
@@ -66,6 +70,11 @@
       "guestPhone": "",
       "preferredLanguage": "Francais, Anglais",
       "breakfastIncluded": "optional",
+      "welcome": "Bienvenue a La villa Romeo. Nous vous souhaitons un sejour doux et reposant au coeur du Golfe de Saint-Tropez. Toute l'equipe reste disponible pour vous accompagner avec attention.",
+      "guestIntro": "Bienvenue a La villa Romeo. Profitez de votre hebergement, de la piscine et du jacuzzi dans une atmosphere chaleureuse et elegante.",
+      "internalNotes": "",
+      "photo": "https://www.antillesexception.com/var/exv/storage/images/_aliases/hero1920x1280/media/images/villas/martinique/mqdi92-villa-ocean-hill/location-villa-luxe-le-diamant-martinique-vue-d-ensemble.jpg/57693786-2-fre-FR/Location-villa-luxe-Le-Diamant-Martinique-Vue-d-ensemble.jpg.jpg",
+      "qrUrl": "guest.html?suite=1",
       "wifi": "LavillaRoméo",
       "wifiPass": "roméo83120",
       "doorCode": "Code portail : 2346",
@@ -74,16 +83,15 @@
       "checkout": "10:00",
       "minibar": "Petit-dejeuner disponible sur demande : 13 EUR adulte, 8 EUR enfant.",
       "rules": "Les animaux ne sont pas acceptes. Logement non-fumeur. Merci de deposer les draps dans le sac mis a disposition avant votre depart.",
-      "arrivalInstructions": "Horaires piscine : 10h00 - 20h00.",
-      "welcome": "Bienvenue a La villa Romeo. Nous vous souhaitons un sejour doux et reposant au coeur du Golfe de Saint-Tropez. Toute l'equipe reste disponible pour vous accompagner avec attention.",
-      "guestIntro": "Bienvenue a La villa Romeo. Profitez de votre hebergement, de la piscine et du jacuzzi dans une atmosphere chaleureuse et elegante.",
-      "internalNotes": "",
-      "photo": "https://www.antillesexception.com/var/exv/storage/images/_aliases/hero1920x1280/media/images/villas/martinique/mqdi92-villa-ocean-hill/location-villa-luxe-le-diamant-martinique-vue-d-ensemble.jpg/57693786-2-fre-FR/Location-villa-luxe-Le-Diamant-Martinique-Vue-d-ensemble.jpg.jpg",
-      "qrUrl": "guest.html?suite=1"
+      "arrivalInstructions": "Horaires piscine : 10h00 - 20h00."
     },
     {
       "id": 2,
       "name": "Mini villa verte",
+      "clientLogin": {
+        "username": "Mini villa verte",
+        "password": "Minivillaverte73504"
+      },
       "category": "Hebergement de charme",
       "publicName": "Mini villa verte",
       "villaType": "Hebergement de charme",
@@ -103,6 +111,11 @@
       "guestPhone": "",
       "preferredLanguage": "Francais, Anglais",
       "breakfastIncluded": "optional",
+      "welcome": "Bienvenue a La villa Romeo. Nous vous souhaitons un sejour doux et reposant au coeur du Golfe de Saint-Tropez. Toute l'equipe reste disponible pour vous accompagner avec attention.",
+      "guestIntro": "Bienvenue a La villa Romeo. Profitez de votre hebergement, de la piscine et du jacuzzi dans une atmosphere chaleureuse et elegante.",
+      "internalNotes": "",
+      "photo": "https://www.purefrance.fr/properties/2732/2000/villa-de-vacances-en-magalas-avec-piscine-privee.117393.jpg",
+      "qrUrl": "guest.html?suite=2",
       "wifi": "LavillaRoméo",
       "wifiPass": "roméo83120",
       "doorCode": "Code portail : 2346",
@@ -111,16 +124,15 @@
       "checkout": "10:00",
       "minibar": "Petit-dejeuner disponible sur demande : 13 EUR adulte, 8 EUR enfant.",
       "rules": "Les animaux ne sont pas acceptes. Logement non-fumeur. Merci de deposer les draps dans le sac mis a disposition avant votre depart.",
-      "arrivalInstructions": "Horaires piscine : 10h00 - 20h00.",
-      "welcome": "Bienvenue a La villa Romeo. Nous vous souhaitons un sejour doux et reposant au coeur du Golfe de Saint-Tropez. Toute l'equipe reste disponible pour vous accompagner avec attention.",
-      "guestIntro": "Bienvenue a La villa Romeo. Profitez de votre hebergement, de la piscine et du jacuzzi dans une atmosphere chaleureuse et elegante.",
-      "internalNotes": "",
-      "photo": "https://www.purefrance.fr/properties/2732/2000/villa-de-vacances-en-magalas-avec-piscine-privee.117393.jpg",
-      "qrUrl": "guest.html?suite=2"
+      "arrivalInstructions": "Horaires piscine : 10h00 - 20h00."
     },
     {
       "id": 3,
       "name": "Mini villa bleue",
+      "clientLogin": {
+        "username": "Mini villa bleue",
+        "password": "Minivillableue19682"
+      },
       "category": "Hebergement de charme",
       "publicName": "Mini villa bleue",
       "villaType": "Hebergement de charme",
@@ -140,6 +152,11 @@
       "guestPhone": "",
       "preferredLanguage": "Francais, Anglais",
       "breakfastIncluded": "optional",
+      "welcome": "Bienvenue a La villa Romeo. Nous vous souhaitons un sejour doux et reposant au coeur du Golfe de Saint-Tropez. Toute l'equipe reste disponible pour vous accompagner avec attention.",
+      "guestIntro": "Bienvenue a La villa Romeo. Profitez de votre hebergement, de la piscine et du jacuzzi dans une atmosphere chaleureuse et elegante.",
+      "internalNotes": "",
+      "photo": "https://www.grandpropertiescollection.com/uploads/categories/0af8169eafdafa22886155a2c69c1b82bcc95430.jpeg",
+      "qrUrl": "guest.html?suite=3",
       "wifi": "LavillaRoméo",
       "wifiPass": "roméo83120",
       "doorCode": "Code portail : 2346",
@@ -148,16 +165,15 @@
       "checkout": "10:00",
       "minibar": "Petit-dejeuner disponible sur demande : 13 EUR adulte, 8 EUR enfant.",
       "rules": "Les animaux ne sont pas acceptes. Logement non-fumeur. Merci de deposer les draps dans le sac mis a disposition avant votre depart.",
-      "arrivalInstructions": "Horaires piscine : 10h00 - 20h00.",
-      "welcome": "Bienvenue a La villa Romeo. Nous vous souhaitons un sejour doux et reposant au coeur du Golfe de Saint-Tropez. Toute l'equipe reste disponible pour vous accompagner avec attention.",
-      "guestIntro": "Bienvenue a La villa Romeo. Profitez de votre hebergement, de la piscine et du jacuzzi dans une atmosphere chaleureuse et elegante.",
-      "internalNotes": "",
-      "photo": "https://www.grandpropertiescollection.com/uploads/categories/0af8169eafdafa22886155a2c69c1b82bcc95430.jpeg",
-      "qrUrl": "guest.html?suite=3"
+      "arrivalInstructions": "Horaires piscine : 10h00 - 20h00."
     },
     {
       "id": 4,
       "name": "Mini villa jaune",
+      "clientLogin": {
+        "username": "Mini villa jaune",
+        "password": "Minivillajaune58437"
+      },
       "category": "Hebergement de charme",
       "publicName": "Mini villa jaune",
       "villaType": "Hebergement de charme",
@@ -177,6 +193,11 @@
       "guestPhone": "",
       "preferredLanguage": "Francais, Anglais",
       "breakfastIncluded": "optional",
+      "welcome": "Bienvenue a La villa Romeo. Nous vous souhaitons un sejour doux et reposant au coeur du Golfe de Saint-Tropez. Toute l'equipe reste disponible pour vous accompagner avec attention.",
+      "guestIntro": "Bienvenue a La villa Romeo. Profitez de votre hebergement, de la piscine et du jacuzzi dans une atmosphere chaleureuse et elegante.",
+      "internalNotes": "",
+      "photo": "https://media.gqmagazine.fr/photos/646345f4058390209525f558/16:9/w_1600,h_900,c_limit/Villa%20Homepage%202.png",
+      "qrUrl": "guest.html?suite=4",
       "wifi": "LavillaRoméo",
       "wifiPass": "roméo83120",
       "doorCode": "Code portail : 2346",
@@ -185,16 +206,15 @@
       "checkout": "10:00",
       "minibar": "Petit-dejeuner disponible sur demande : 13 EUR adulte, 8 EUR enfant.",
       "rules": "Les animaux ne sont pas acceptes. Logement non-fumeur. Merci de deposer les draps dans le sac mis a disposition avant votre depart.",
-      "arrivalInstructions": "Horaires piscine : 10h00 - 20h00.",
-      "welcome": "Bienvenue a La villa Romeo. Nous vous souhaitons un sejour doux et reposant au coeur du Golfe de Saint-Tropez. Toute l'equipe reste disponible pour vous accompagner avec attention.",
-      "guestIntro": "Bienvenue a La villa Romeo. Profitez de votre hebergement, de la piscine et du jacuzzi dans une atmosphere chaleureuse et elegante.",
-      "internalNotes": "",
-      "photo": "https://media.gqmagazine.fr/photos/646345f4058390209525f558/16:9/w_1600,h_900,c_limit/Villa%20Homepage%202.png",
-      "qrUrl": "guest.html?suite=4"
+      "arrivalInstructions": "Horaires piscine : 10h00 - 20h00."
     },
     {
       "id": 5,
       "name": "Cottage Juliette",
+      "clientLogin": {
+        "username": "Cottage Juliette",
+        "password": "CottageJuliette92015"
+      },
       "category": "Cottage de charme",
       "publicName": "Cottage Juliette",
       "villaType": "Cottage de charme",
@@ -214,6 +234,11 @@
       "guestPhone": "",
       "preferredLanguage": "Francais, Anglais",
       "breakfastIncluded": "optional",
+      "welcome": "Bienvenue a La villa Romeo. Nous vous souhaitons un sejour doux et reposant au coeur du Golfe de Saint-Tropez. Toute l'equipe reste disponible pour vous accompagner avec attention.",
+      "guestIntro": "Bienvenue a La villa Romeo. Profitez de votre hebergement, de la piscine et du jacuzzi dans une atmosphere chaleureuse et elegante.",
+      "internalNotes": "",
+      "photo": "https://media.licdn.com/dms/image/v2/C4D1BAQFkH2EtJCQnUQ/company-background_10000/company-background_10000/0/1583331883957?e=2147483647&v=beta&t=XULkNWO5jdai53LflACDkAWHj-PPlmQstwqxBEUcc5s",
+      "qrUrl": "guest.html?suite=5",
       "wifi": "LavillaRoméo",
       "wifiPass": "roméo83120",
       "doorCode": "Code portail : 2346",
@@ -222,12 +247,7 @@
       "checkout": "10:00",
       "minibar": "Petit-dejeuner disponible sur demande : 13 EUR adulte, 8 EUR enfant.",
       "rules": "Les animaux ne sont pas acceptes. Logement non-fumeur. Merci de deposer les draps dans le sac mis a disposition avant votre depart.",
-      "arrivalInstructions": "Horaires piscine : 10h00 - 20h00.",
-      "welcome": "Bienvenue a La villa Romeo. Nous vous souhaitons un sejour doux et reposant au coeur du Golfe de Saint-Tropez. Toute l'equipe reste disponible pour vous accompagner avec attention.",
-      "guestIntro": "Bienvenue a La villa Romeo. Profitez de votre hebergement, de la piscine et du jacuzzi dans une atmosphere chaleureuse et elegante.",
-      "internalNotes": "",
-      "photo": "https://media.licdn.com/dms/image/v2/C4D1BAQFkH2EtJCQnUQ/company-background_10000/company-background_10000/0/1583331883957?e=2147483647&v=beta&t=XULkNWO5jdai53LflACDkAWHj-PPlmQstwqxBEUcc5s",
-      "qrUrl": "guest.html?suite=5"
+      "arrivalInstructions": "Horaires piscine : 10h00 - 20h00."
     }
   ],
   "reservations": [

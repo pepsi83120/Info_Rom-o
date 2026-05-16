@@ -1717,23 +1717,23 @@ tbody tr:hover td {
     height: auto;
     min-height: 0;
     align-items: stretch;
-    flex-direction: row;
-    padding: 10px 12px;
-    gap: 10px;
+    flex-direction: column;
+    padding: 10px 12px 12px;
+    gap: 9px;
   }
 
   .top-actions {
     display: grid;
-    grid-template-columns: 44px minmax(88px, 1fr);
-    gap: 6px;
-    width: auto;
-    margin-left: auto;
+    grid-template-columns: 1fr 44px 1fr;
+    gap: 7px;
+    width: 100%;
+    margin-left: 0;
   }
 
   .top-actions .btn {
     width: 100%;
-    min-height: 38px;
-    padding: 8px 9px;
+    min-height: 42px;
+    padding: 8px 10px;
     border-radius: 10px;
     font-size: 12px;
   }
@@ -1748,6 +1748,7 @@ tbody tr:hover td {
 
   .top-actions .btn.icon {
     width: 44px;
+    min-width: 44px;
     padding: 0;
   }
 
@@ -1795,6 +1796,10 @@ tbody tr:hover td {
 
   .page-title {
     font-size: 22px;
+    max-width: calc(100vw - 82px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .page-subtitle {
@@ -1837,7 +1842,20 @@ tbody tr:hover td {
 
 @media (max-width: 430px) {
   .top-actions {
-    grid-template-columns: 40px minmax(76px, 1fr);
+    grid-template-columns: 1fr 42px 1fr;
+    gap: 6px;
+  }
+
+  .top-actions .btn {
+    min-height: 40px;
+    padding: 7px 8px;
+    font-size: 11px;
+    gap: 5px;
+  }
+
+  .top-actions .btn.icon {
+    width: 42px;
+    min-width: 42px;
   }
 
   .hero-title {
