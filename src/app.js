@@ -4,6 +4,8 @@ import { clone, downloadJson, loadServerState, loadState, nextId, resetState, sa
 const app = document.getElementById("app");
 const ADMIN_AUTH_KEY = "villa-romeo-admin-auth-v1";
 const GUEST_AUTH_KEY = "villa-romeo-guest-auth-v1";
+const ADMIN_NOTIFICATION_READ_KEY = "villa-romeo-admin-notifications-read-v1";
+const ADMIN_NOTIFICATION_SNAPSHOT_KEY = "villa-romeo-admin-notifications-snapshot-v1";
 const ADMIN_CREDENTIALS = {
   username: "La Villa Roméo",
   password: "Jajap00mp00m*"
@@ -18,6 +20,8 @@ let activeTab = "overview";
 let modalMode = null;
 let modalEntityId = null;
 let toastTimer = null;
+let notificationSnapshot = localStorage.getItem(ADMIN_NOTIFICATION_SNAPSHOT_KEY) || "";
+let syncTimer = null;
 let filters = {
   reservationStatus: "all",
   reservationSuite: "all",
@@ -51,6 +55,8 @@ function startAdminApp() {
   render();
   bindGlobalEvents();
   syncServerState();
+  clearInterval(syncTimer);
+  syncTimer = setInterval(() => syncServerState(false), 20000);
 }
 
 function renderLoginChoice(mode = "admin", error = "") {
@@ -60,9 +66,9 @@ function renderLoginChoice(mode = "admin", error = "") {
       <form class="auth-card" id="loginForm">
         <div class="brand-mark">M</div>
         <div>
-          <div class="auth-eyebrow">La Villa Romeo</div>
+          <div class="auth-eyebrow">La villa Roméo</div>
           <h1>${isAdmin ? "Administration" : "Espace client"}</h1>
-          <p>${isAdmin ? "Connectez-vous pour gerer La Villa Romeo." : "Connectez-vous au logement reserve."}</p>
+          <p>${isAdmin ? "Connectez-vous pour gerer La villa Roméo." : "Connectez-vous au logement reserve."}</p>
         </div>
         <div class="auth-switch" role="tablist" aria-label="Type de connexion">
           <button class="${isAdmin ? "active" : ""}" type="button" data-auth-mode="admin"><i class="ti ti-shield-lock"></i>Admin</button>
@@ -142,14 +148,14 @@ function normalizeCredential(value) {
     .replace(/\s+/g, " ");
 }
 
-async function syncServerState() {
+async function syncServerState(showToast = true) {
   const serverState = await loadServerState();
   if (!serverState) return;
   state = serverState;
   activeSuiteId = state.suites.some(s => s.id === activeSuiteId) ? activeSuiteId : state.suites[0]?.id || null;
   saveState(state);
   render();
-  toast("Sauvegarde serveur chargee.");
+  if (showToast) toast("Sauvegarde serveur chargee.");
 }
 
 function shell() {
@@ -187,7 +193,7 @@ function shell() {
           </div>
           <div class="top-actions">
             <button class="btn install-btn" data-action="install-app"><i class="ti ti-device-mobile-down"></i> Installer l'appli</button>
-            <button class="btn icon" data-view="messages" aria-label="Messages">
+            <button class="btn icon" data-action="toggle-notifications" aria-label="Notifications">
               <i class="ti ti-bell"></i>
               <span class="notification-dot" id="notificationDot"></span>
             </button>
@@ -197,6 +203,7 @@ function shell() {
             <button class="btn gold mobile-hide" data-action="new-suite"><i class="ti ti-home-plus"></i> Logement</button>
           </div>
         </header>
+        <div class="notification-panel" id="notificationPanel"></div>
         <div class="content">
           <section class="view active" id="view-dashboard"></section>
           <section class="view" id="view-analytics"></section>
@@ -269,6 +276,10 @@ function handleAction(action, button) {
     "close-sidebar": () => setSidebarOpen(false),
     "install-app": () => installApp(),
     "logout-admin": () => logoutAdmin(),
+    "toggle-notifications": () => toggleNotifications(),
+    "enable-notifications": () => enableBrowserNotifications(),
+    "clear-admin-notifications": () => clearAdminNotifications(),
+    "open-notification": () => openNotification(button.dataset.targetView, id),
     "open-guest": () => openGuestPortal(),
     "export": () => exportData(),
     "reset": () => resetAll(),
@@ -348,9 +359,10 @@ function render() {
   renderMessages();
   renderQr();
   renderSettings();
-  const unread = state.messages.filter(m => m.status === "unread").length;
+  const unread = unreadAdminNotifications().length;
   const notificationDot = document.getElementById("notificationDot");
   if (notificationDot) notificationDot.hidden = unread === 0;
+  renderNotificationPanel();
   document.querySelectorAll("[data-setting='propertyName']").forEach(el => el.textContent = state.settings.propertyName);
   document.querySelectorAll("[data-setting='descriptor']").forEach(el => el.textContent = state.settings.descriptor);
   document.querySelectorAll("[data-setting='adminName']").forEach(el => el.textContent = state.settings.adminName);
@@ -441,7 +453,7 @@ function renderDashboard() {
               ${heroMetric(String(unread), "Messages urgents")}
             </div>
           </div>
-          <div class="hero-art dashboard-photo" aria-label="Piscine La villa Romeo"></div>
+          <div class="hero-art dashboard-photo" aria-label="Piscine La villa Roméo"></div>
         </div>
         <div class="stats">
           ${statCard("Occupation", pct(occupied, state.suites.length), `${occupied} logements occupes`)}
@@ -1139,6 +1151,170 @@ function renderMessages() {
       </div>
     </div>
   `;
+}
+
+function renderNotificationPanel() {
+  const panel = document.getElementById("notificationPanel");
+  if (!panel) return;
+  const notifications = adminNotifications();
+  const unread = unreadAdminNotifications();
+  const permission = notificationPermissionLabel();
+
+  panel.innerHTML = `
+    <div class="notification-card">
+      <div class="notification-head">
+        <div>
+          <div class="section-title">Notifications</div>
+          <div class="section-copy">${unread.length} alerte${unread.length > 1 ? "s" : ""} a traiter - Navigateur : ${permission}</div>
+        </div>
+        <div class="notification-actions">
+          <button class="btn small" data-action="enable-notifications"><i class="ti ti-bell-ringing"></i>Activer</button>
+          <button class="btn small" data-action="clear-admin-notifications"><i class="ti ti-checks"></i>Tout vu</button>
+        </div>
+      </div>
+      <div class="notification-list">
+        ${notifications.length ? notifications.map(item => `
+          <button class="notification-item ${item.read ? "" : "unread"}" data-action="open-notification" data-id="${escAttr(item.sourceId)}" data-target-view="${escAttr(item.view)}">
+            <i class="ti ${item.icon}"></i>
+            <span>
+              <b>${esc(item.title)}</b>
+              <small>${esc(item.text)}</small>
+            </span>
+          </button>
+        `).join("") : `<div class="empty compact">Aucune notification pour le moment.</div>`}
+      </div>
+    </div>
+  `;
+
+  watchAdminNotifications();
+}
+
+function adminNotifications() {
+  const readIds = notificationReadIds(ADMIN_NOTIFICATION_READ_KEY);
+  const items = [];
+
+  state.messages
+    .filter(message => message.status === "unread")
+    .forEach(message => items.push({
+      id: `message-${message.id}`,
+      sourceId: message.id,
+      view: "messages",
+      icon: "ti-message-circle",
+      title: `Message - ${message.guest || "Client"}`,
+      text: `${suiteName(message.suiteId)} - ${message.subject || "Nouvelle demande"}`
+    }));
+
+  state.breakfasts
+    .filter(breakfast => breakfast.status === "new" || breakfast.status === "pending")
+    .forEach(breakfast => items.push({
+      id: `breakfast-${breakfast.id}`,
+      sourceId: breakfast.id,
+      view: "breakfasts",
+      icon: "ti-coffee",
+      title: "Petit-dejeuner",
+      text: `${suiteName(breakfast.suiteId)} - ${fmtDate(breakfast.date)} ${breakfast.time || ""}`
+    }));
+
+  state.tasks
+    .filter(task => task.status === "open" && task.priority === "high")
+    .forEach(task => items.push({
+      id: `task-${task.id}`,
+      sourceId: task.id,
+      view: "tasks",
+      icon: "ti-alert-triangle",
+      title: "Operation prioritaire",
+      text: `${suiteName(task.suiteId)} - ${task.title}`
+    }));
+
+  state.events
+    .flatMap(event => (event.registrations || []).map(registration => ({ event, registration })))
+    .forEach(({ event, registration }) => items.push({
+      id: `event-${event.id}-${registration.id}`,
+      sourceId: event.id,
+      view: "events",
+      icon: "ti-calendar-star",
+      title: "Inscription evenement",
+      text: `${suiteName(registration.suiteId)} - ${event.title} (${registration.people || 1} pers.)`
+    }));
+
+  return items.map(item => ({ ...item, read: readIds.has(item.id) }));
+}
+
+function unreadAdminNotifications() {
+  return adminNotifications().filter(item => !item.read);
+}
+
+function toggleNotifications() {
+  document.getElementById("notificationPanel")?.classList.toggle("open");
+}
+
+async function enableBrowserNotifications() {
+  if (!("Notification" in window)) {
+    toast("Ce navigateur ne gere pas les notifications.");
+    return;
+  }
+  const result = Notification.permission === "default" ? await Notification.requestPermission() : Notification.permission;
+  toast(result === "granted" ? "Notifications navigateur activees." : "Notifications navigateur non autorisees.");
+  renderNotificationPanel();
+}
+
+function clearAdminNotifications() {
+  const ids = adminNotifications().map(item => item.id);
+  localStorage.setItem(ADMIN_NOTIFICATION_READ_KEY, JSON.stringify(ids));
+  notificationSnapshot = "";
+  render();
+  toast("Notifications marquees comme vues.");
+}
+
+function openNotification(targetView, id) {
+  document.getElementById("notificationPanel")?.classList.remove("open");
+  if (targetView) showView(targetView);
+  if (targetView === "messages" && id) markMessageRead(id, false);
+}
+
+function watchAdminNotifications() {
+  const unread = unreadAdminNotifications();
+  const current = unread.map(item => item.id).join("|");
+  if (!notificationSnapshot) {
+    notificationSnapshot = current;
+    localStorage.setItem(ADMIN_NOTIFICATION_SNAPSHOT_KEY, current);
+    return;
+  }
+
+  const previous = new Set(notificationSnapshot.split("|").filter(Boolean));
+  const fresh = unread.filter(item => !previous.has(item.id));
+  if (fresh.length) {
+    notifyBrowser("Nouvelle notification admin", fresh[0].title, fresh[0].text);
+  }
+
+  notificationSnapshot = current;
+  localStorage.setItem(ADMIN_NOTIFICATION_SNAPSHOT_KEY, current);
+}
+
+function notifyBrowser(title, body, tag = "villa-romeo-admin") {
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  new Notification(title, {
+    body,
+    tag,
+    icon: "/assets/icons/icon-192.png"
+  });
+}
+
+function notificationReadIds(key) {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(key) || "[]"));
+  } catch {
+    return new Set();
+  }
+}
+
+function notificationPermissionLabel() {
+  if (!("Notification" in window)) return "indisponible";
+  return {
+    granted: "active",
+    denied: "bloque",
+    default: "a activer"
+  }[Notification.permission] || Notification.permission;
 }
 
 function renderQr() {
@@ -2163,8 +2339,8 @@ function suiteDefaults() {
     arrivalInstructions: "Horaires piscine : 10h00 - 20h00.",
     minibar: "Petit-dejeuner disponible sur demande : 13 EUR adulte, 8 EUR enfant.",
     rules: "Les animaux ne sont pas acceptes. Logement non-fumeur. Merci de deposer les draps dans le sac mis a disposition avant votre depart.",
-    welcome: "Bienvenue a La villa Romeo. Nous vous souhaitons un sejour doux et reposant au coeur du Golfe de Saint-Tropez.",
-    guestIntro: "Bienvenue a La villa Romeo. Profitez de votre hebergement, de la piscine et du jacuzzi dans une atmosphere chaleureuse et elegante.",
+    welcome: "Bienvenue a La villa Roméo. Nous vous souhaitons un sejour doux et reposant au coeur du Golfe de Saint-Tropez.",
+    guestIntro: "Bienvenue a La villa Roméo. Profitez de votre hebergement, de la piscine et du jacuzzi dans une atmosphere chaleureuse et elegante.",
     internalNotes: "",
     photo: "",
     qrUrl: "guest.html?suite=new"
@@ -2206,7 +2382,7 @@ function eventDefaults() {
     category: "Experience locale",
     date: today(),
     time: "18:00",
-    location: "La villa Romeo",
+    location: "La villa Roméo",
     description: "Description de l'evenement visible dans l'espace client.",
     requiresRegistration: false,
     capacity: 0,

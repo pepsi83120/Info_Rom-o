@@ -245,6 +245,111 @@ div {
   padding: 0;
 }
 
+.notification-button {
+  position: relative;
+}
+
+.notification-dot {
+  position: absolute;
+  top: 7px;
+  right: 8px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 2px solid white;
+  background: var(--danger);
+}
+
+.guest-notification-panel {
+  position: fixed;
+  z-index: 30;
+  top: 78px;
+  right: clamp(16px, 4vw, 42px);
+  width: min(430px, calc(100vw - 24px));
+  display: none;
+}
+
+.guest-notification-panel.open {
+  display: block;
+}
+
+.guest-notification-card {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255,255,255,.96);
+  box-shadow: var(--shadow);
+}
+
+.notification-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.notification-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.notification-list {
+  display: grid;
+  gap: 8px;
+  max-height: min(62vh, 520px);
+  overflow: auto;
+  padding: 12px;
+}
+
+.notification-item {
+  width: 100%;
+  border: 1px solid rgba(31,154,160,.14);
+  border-radius: 14px;
+  background: rgba(246,251,251,.72);
+  color: var(--ink);
+  padding: 12px;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  text-align: left;
+}
+
+.notification-item.unread {
+  border-color: rgba(31,154,160,.32);
+  background: linear-gradient(135deg, rgba(31,154,160,.12), rgba(242,182,109,.12));
+}
+
+.notification-item i {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: white;
+  color: var(--navy);
+}
+
+.notification-item b,
+.notification-item small {
+  display: block;
+}
+
+.notification-item b {
+  font-size: 13px;
+}
+
+.notification-item small {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 4px;
+  line-height: 1.35;
+}
+
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(320px, .95fr);
@@ -1012,7 +1117,7 @@ select:focus {
 
   .nav-actions {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr)) 46px;
     gap: 8px;
     padding: 0;
     border: 1px solid rgba(31,154,160,.18);
@@ -1036,6 +1141,17 @@ select:focus {
 
   .nav-actions .btn.icon {
     width: 100%;
+  }
+
+  .guest-notification-panel {
+    top: 168px;
+    right: 10px;
+    left: 10px;
+    width: auto;
+  }
+
+  .notification-head {
+    flex-direction: column;
   }
 
   .hero {

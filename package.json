@@ -2,7 +2,7 @@
   "name": "villa-romeo-admin",
   "version": "1.0.0",
   "private": true,
-  "description": "Panel admin pour La villa Romeo.",
+  "description": "Panel admin pour La villa Roméo.",
   "engines": {
     "node": ">=20"
   },

@@ -451,6 +451,104 @@ button {
   border: 2px solid white;
 }
 
+.notification-panel {
+  position: fixed;
+  z-index: 45;
+  top: 84px;
+  right: 22px;
+  width: min(430px, calc(100vw - 24px));
+  display: none;
+}
+
+.notification-panel.open {
+  display: block;
+}
+
+.notification-card {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255,255,255,.96);
+  box-shadow: var(--shadow);
+}
+
+.notification-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.notification-head .section-title {
+  font-size: 27px;
+}
+
+.notification-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.notification-list {
+  display: grid;
+  gap: 8px;
+  max-height: min(62vh, 520px);
+  overflow: auto;
+  padding: 12px;
+}
+
+.notification-item {
+  width: 100%;
+  border: 1px solid rgba(31,154,160,.14);
+  border-radius: 14px;
+  background: rgba(246,251,251,.72);
+  color: var(--ink);
+  padding: 12px;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  text-align: left;
+}
+
+.notification-item.unread {
+  border-color: rgba(31,154,160,.32);
+  background: linear-gradient(135deg, rgba(31,154,160,.12), rgba(242,182,109,.12));
+}
+
+.notification-item i {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: white;
+  color: var(--navy);
+}
+
+.notification-item b,
+.notification-item small {
+  display: block;
+}
+
+.notification-item b {
+  font-size: 13px;
+}
+
+.notification-item small {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 4px;
+  line-height: 1.35;
+}
+
+.empty.compact {
+  padding: 18px;
+}
+
 .view {
   display: none;
 }
@@ -1762,6 +1860,17 @@ tbody tr:hover td {
     width: 44px;
     min-width: 44px;
     padding: 0;
+  }
+
+  .notification-panel {
+    top: 108px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+  }
+
+  .notification-head {
+    flex-direction: column;
   }
 
   .content {

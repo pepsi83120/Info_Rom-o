@@ -2,12 +2,16 @@ import { loadServerState, loadState, nextId, saveState } from "./store.js";
 
 const app = document.getElementById("guestApp");
 const GUEST_AUTH_KEY = "villa-romeo-guest-auth-v1";
+const GUEST_NOTIFICATION_READ_KEY = "villa-romeo-guest-notifications-read-v1";
+const GUEST_NOTIFICATION_SNAPSHOT_KEY = "villa-romeo-guest-notifications-snapshot-v1";
 
 let installPromptEvent = null;
 let state = loadState();
 let guestSession = loadGuestSession();
 let activeSuiteId = guestSession?.suiteId || getInitialSuiteId();
 let toastTimer = null;
+let notificationSnapshot = localStorage.getItem(GUEST_NOTIFICATION_SNAPSHOT_KEY) || "";
+let syncTimer = null;
 
 bootGuest();
 bindEvents();
@@ -24,6 +28,10 @@ if ("serviceWorker" in navigator) {
 function bootGuest() {
   render();
   if (guestSession) syncServerState();
+  clearInterval(syncTimer);
+  syncTimer = setInterval(() => {
+    if (guestSession) syncServerState();
+  }, 20000);
 }
 
 async function syncServerState() {
@@ -49,6 +57,9 @@ function bindEvents() {
 
     if (action === "logout") logoutGuest();
     if (action === "install-app") installApp();
+    if (action === "toggle-notifications") toggleGuestNotifications();
+    if (action === "enable-notifications") enableGuestBrowserNotifications();
+    if (action === "clear-client-notifications") clearGuestNotifications();
     if (action === "modal") openModal(button.dataset.modal, id);
     if (action === "close") closeModal();
     if (action === "breakfast") submitBreakfast();
@@ -79,6 +90,7 @@ function render() {
     : [];
   const visibleEvents = upcomingEvents();
   const temperatures = state.temperatures || {};
+  const notificationCount = unreadGuestNotifications().length;
   document.documentElement.style.setProperty("--navy", state.settings.primaryColor || "#183342");
   document.documentElement.style.setProperty("--gold", state.settings.accentColor || "#b99655");
 
@@ -95,11 +107,16 @@ function render() {
         <button class="btn install-btn" data-action="install-app"><i class="ti ti-device-mobile-down"></i><span>Installer l'appli</span></button>
         <div class="nav-actions">
           <button class="btn icon" data-action="copy-wifi" aria-label="Copier Wi-Fi"><i class="ti ti-wifi"></i></button>
+          <button class="btn icon notification-button" data-action="toggle-notifications" aria-label="Notifications">
+            <i class="ti ti-bell"></i>
+            <span class="notification-dot" ${notificationCount ? "" : "hidden"}></span>
+          </button>
           <button class="btn" data-action="modal" data-modal="message"><i class="ti ti-message-circle"></i><span>Message</span></button>
           <button class="btn" data-action="logout"><i class="ti ti-logout"></i><span>Deconnexion</span></button>
           <button class="btn primary" data-action="call"><i class="ti ti-phone"></i><span>Appeler</span></button>
         </div>
       </nav>
+      ${guestNotificationPanel()}
 
       <header class="hero">
         <div class="hero-copy">
@@ -255,6 +272,124 @@ function render() {
     <div class="modal" id="guestModal"></div>
     <div class="toast" id="toast"></div>
   `;
+  watchGuestNotifications();
+}
+
+function guestNotificationPanel() {
+  const notifications = guestNotifications();
+  const unread = unreadGuestNotifications();
+  const permission = notificationPermissionLabel();
+
+  return `
+    <div class="guest-notification-panel" id="guestNotificationPanel">
+      <div class="guest-notification-card">
+        <div class="notification-head">
+          <div>
+            <div class="panel-title">Notifications</div>
+            <div class="panel-sub">${unread.length} alerte${unread.length > 1 ? "s" : ""} - Navigateur : ${permission}</div>
+          </div>
+          <div class="notification-actions">
+            <button class="btn small" data-action="enable-notifications"><i class="ti ti-bell-ringing"></i><span>Activer</span></button>
+            <button class="btn small" data-action="clear-client-notifications"><i class="ti ti-checks"></i><span>Tout vu</span></button>
+          </div>
+        </div>
+        <div class="notification-list">
+          ${notifications.length ? notifications.map(item => `
+            <div class="notification-item ${item.read ? "" : "unread"}">
+              <i class="ti ${item.icon}"></i>
+              <span>
+                <b>${esc(item.title)}</b>
+                <small>${esc(item.text)}</small>
+              </span>
+            </div>
+          `).join("") : `<div class="info-item"><i class="ti ti-bell"></i><div><b>Aucune notification</b><br>Les messages importants apparaitront ici.</div></div>`}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function guestNotifications() {
+  const readIds = notificationReadIds(guestNotificationReadKey());
+  const suite = currentSuite();
+  const reservation = currentReservation();
+  const items = [];
+
+  state.messages
+    .filter(message => message.direction === "outgoing")
+    .filter(message => Number(message.suiteId) === Number(suite.id) || Number(message.reservationId) === Number(reservation?.id))
+    .forEach(message => items.push({
+      id: `message-${message.id}`,
+      icon: "ti-message-circle",
+      title: message.subject || "Message de la conciergerie",
+      text: message.body || "Nouveau message"
+    }));
+
+  upcomingEvents()
+    .slice(0, 3)
+    .forEach(event => items.push({
+      id: `event-${event.id}`,
+      icon: "ti-calendar-star",
+      title: event.title,
+      text: `${fmtDate(event.date)} - ${event.location || state.settings.propertyName}`
+    }));
+
+  if (state.temperatures?.updatedAt) {
+    items.push({
+      id: `temperatures-${state.temperatures.updatedAt}`,
+      icon: "ti-temperature",
+      title: "Temperatures mises a jour",
+      text: `Piscine ${state.temperatures.pool?.value || "-"} degres - Air ${state.temperatures.air?.value || "-"} degres`
+    });
+  }
+
+  return items.map(item => ({ ...item, read: readIds.has(item.id) }));
+}
+
+function unreadGuestNotifications() {
+  return guestNotifications().filter(item => !item.read);
+}
+
+function toggleGuestNotifications() {
+  document.getElementById("guestNotificationPanel")?.classList.toggle("open");
+}
+
+async function enableGuestBrowserNotifications() {
+  if (!("Notification" in window)) {
+    toast("Ce navigateur ne gere pas les notifications.");
+    return;
+  }
+  const result = Notification.permission === "default" ? await Notification.requestPermission() : Notification.permission;
+  toast(result === "granted" ? "Notifications activees." : "Notifications non autorisees.");
+  render();
+}
+
+function clearGuestNotifications() {
+  localStorage.setItem(guestNotificationReadKey(), JSON.stringify(guestNotifications().map(item => item.id)));
+  notificationSnapshot = "";
+  render();
+  toast("Notifications marquees comme vues.");
+}
+
+function watchGuestNotifications() {
+  const unread = unreadGuestNotifications();
+  const current = unread.map(item => item.id).join("|");
+  if (!notificationSnapshot) {
+    notificationSnapshot = current;
+    localStorage.setItem(GUEST_NOTIFICATION_SNAPSHOT_KEY, current);
+    return;
+  }
+
+  const previous = new Set(notificationSnapshot.split("|").filter(Boolean));
+  const fresh = unread.filter(item => !previous.has(item.id));
+  if (fresh.length) notifyBrowser("La villa Roméo", fresh[0].title, fresh[0].text, `villa-romeo-client-${activeSuiteId}`);
+
+  notificationSnapshot = current;
+  localStorage.setItem(GUEST_NOTIFICATION_SNAPSHOT_KEY, current);
+}
+
+function guestNotificationReadKey() {
+  return `${GUEST_NOTIFICATION_READ_KEY}-${activeSuiteId || "guest"}`;
 }
 
 function renderGuestLogin(error = "") {
@@ -717,6 +852,32 @@ function esc(value) {
 
 function escAttr(value) {
   return esc(value).replace(/`/g, "&#096;");
+}
+
+function notifyBrowser(title, body, tag = "villa-romeo-client") {
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  new Notification(title, {
+    body,
+    tag,
+    icon: "/assets/icons/icon-192.png"
+  });
+}
+
+function notificationReadIds(key) {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(key) || "[]"));
+  } catch {
+    return new Set();
+  }
+}
+
+function notificationPermissionLabel() {
+  if (!("Notification" in window)) return "indisponible";
+  return {
+    granted: "active",
+    denied: "bloque",
+    default: "a activer"
+  }[Notification.permission] || Notification.permission;
 }
 
 function toast(message) {
