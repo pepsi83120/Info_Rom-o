@@ -74,6 +74,66 @@ div {
   overflow-wrap: anywhere;
 }
 
+.auth-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.auth-card {
+  width: min(440px, 100%);
+  display: grid;
+  gap: 18px;
+  padding: 30px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(19, 25, 29, .9);
+  box-shadow: var(--shadow);
+}
+
+.auth-card h1 {
+  margin: 0 0 6px;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 42px;
+  line-height: 1;
+}
+
+.auth-card p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.auth-card label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.auth-card input {
+  width: 100%;
+}
+
+.auth-eyebrow {
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.auth-error {
+  padding: 12px 14px;
+  border: 1px solid rgba(200, 78, 53, .4);
+  border-radius: var(--radius-sm);
+  color: #ffd8ce;
+  background: rgba(200, 78, 53, .14);
+  font-weight: 700;
+}
+
 .guest-shell {
   min-height: 100vh;
 }
@@ -623,6 +683,24 @@ select:focus {
 
 .suite-picker .field {
   flex: 1;
+}
+
+.locked-suite {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  background: rgba(255,255,255,.04);
+  font-weight: 800;
+}
+
+.locked-suite i {
+  color: var(--gold);
+  font-size: 20px;
 }
 
 .modal {

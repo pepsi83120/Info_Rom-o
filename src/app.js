@@ -2,8 +2,14 @@ import { defaultState } from "./data.js";
 import { clone, downloadJson, loadServerState, loadState, nextId, resetState, saveState } from "./store.js";
 
 const app = document.getElementById("app");
+const ADMIN_AUTH_KEY = "villa-romeo-admin-auth-v1";
+const ADMIN_CREDENTIALS = {
+  username: "La Villa Roméo",
+  password: "Jajap00mp00m*"
+};
 
 let state = loadState();
+let isAdminAuthenticated = localStorage.getItem(ADMIN_AUTH_KEY) === "ok";
 let view = "dashboard";
 let activeSuiteId = state.suites[0]?.id || null;
 let activeTab = "overview";
@@ -21,10 +27,58 @@ let filters = {
 boot();
 
 function boot() {
+  if (!isAdminAuthenticated) {
+    renderAdminLogin();
+    return;
+  }
+
+  startAdminApp();
+}
+
+function startAdminApp() {
   app.innerHTML = shell();
   render();
   bindGlobalEvents();
   syncServerState();
+}
+
+function renderAdminLogin(error = "") {
+  app.innerHTML = `
+    <main class="auth-screen">
+      <form class="auth-card" id="adminLoginForm">
+        <div class="brand-mark">M</div>
+        <div>
+          <div class="auth-eyebrow">Acces prive</div>
+          <h1>Administration</h1>
+          <p>Connectez-vous pour gerer La Villa Romeo.</p>
+        </div>
+        <label>
+          Identifiant
+          <input id="adminUsername" type="text" autocomplete="username" required>
+        </label>
+        <label>
+          Mot de passe
+          <input id="adminPassword" type="password" autocomplete="current-password" required>
+        </label>
+        ${error ? `<div class="auth-error">${esc(error)}</div>` : ""}
+        <button class="btn primary" type="submit"><i class="ti ti-lock-open"></i>Se connecter</button>
+      </form>
+    </main>
+  `;
+
+  document.getElementById("adminLoginForm").addEventListener("submit", event => {
+    event.preventDefault();
+    const username = value("adminUsername").trim();
+    const password = value("adminPassword");
+    if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+      localStorage.setItem(ADMIN_AUTH_KEY, "ok");
+      isAdminAuthenticated = true;
+      startAdminApp();
+      return;
+    }
+
+    renderAdminLogin("Identifiant ou mot de passe incorrect.");
+  });
 }
 
 async function syncServerState() {
@@ -76,6 +130,7 @@ function shell() {
               <span class="notification-dot" id="notificationDot"></span>
             </button>
             <button class="btn" data-action="open-guest"><i class="ti ti-external-link"></i> Portail client</button>
+            <button class="btn" data-action="logout-admin"><i class="ti ti-logout"></i> Deconnexion</button>
             <button class="btn" data-action="export"><i class="ti ti-download"></i> Export</button>
             <button class="btn gold" data-action="new-suite"><i class="ti ti-home-plus"></i> Logement</button>
           </div>
@@ -150,6 +205,7 @@ function handleAction(action, button) {
   const actions = {
     "toggle-sidebar": () => setSidebarOpen(!document.getElementById("sidebar").classList.contains("open")),
     "close-sidebar": () => setSidebarOpen(false),
+    "logout-admin": () => logoutAdmin(),
     "open-guest": () => openGuestPortal(),
     "export": () => exportData(),
     "reset": () => resetAll(),
@@ -193,6 +249,12 @@ function handleAction(action, button) {
   };
 
   actions[action]?.();
+}
+
+function logoutAdmin() {
+  localStorage.removeItem(ADMIN_AUTH_KEY);
+  isAdminAuthenticated = false;
+  renderAdminLogin();
 }
 
 function render() {
@@ -1460,6 +1522,7 @@ function modalBody(type, id) {
 }
 
 function saveSuiteFromModal() {
+  const existingSuite = modalEntityId ? state.suites.find(s => s.id === modalEntityId) : null;
   const payload = {
     name: val("modal-name"),
     category: val("modal-category"),
@@ -1468,11 +1531,12 @@ function saveSuiteFromModal() {
     surface: val("modal-surface"),
     guests: Number(val("modal-guests")) || 1,
     view: val("modal-view"),
-    color: val("modal-color")
+    color: val("modal-color"),
+    clientLogin: suiteClientLogin(existingSuite, val("modal-name"))
   };
 
   if (modalEntityId) {
-    Object.assign(state.suites.find(s => s.id === modalEntityId), payload);
+    Object.assign(existingSuite, payload);
   } else {
     const suite = { ...suiteDefaults(), id: nextId(state.suites), ...payload };
     suite.qrUrl = `guest.html?suite=${suite.id}`;
@@ -1481,6 +1545,21 @@ function saveSuiteFromModal() {
   }
   closeModal();
   persist("Logement enregistre.");
+}
+
+function suiteClientLogin(existingSuite, suiteName) {
+  return {
+    username: suiteName,
+    password: existingSuite?.clientLogin?.password || `${compactLoginName(suiteName)}${randomDigits(5)}`
+  };
+}
+
+function compactLoginName(value) {
+  return String(value || "Logement").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/gi, "");
+}
+
+function randomDigits(length) {
+  return Array.from({ length }, () => Math.floor(Math.random() * 10)).join("");
 }
 
 function saveReservationFromModal() {

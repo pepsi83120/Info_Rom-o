@@ -1,19 +1,30 @@
 import { loadServerState, loadState, nextId, saveState } from "./store.js";
 
 const app = document.getElementById("guestApp");
+const GUEST_AUTH_KEY = "villa-romeo-guest-auth-v1";
+
 let state = loadState();
-let activeSuiteId = getInitialSuiteId();
+let guestSession = loadGuestSession();
+let activeSuiteId = guestSession?.suiteId || getInitialSuiteId();
 let toastTimer = null;
 
-render();
+bootGuest();
 bindEvents();
-syncServerState();
+
+function bootGuest() {
+  render();
+  if (guestSession) syncServerState();
+}
 
 async function syncServerState() {
   const serverState = await loadServerState();
   if (!serverState) return;
   state = serverState;
-  activeSuiteId = state.suites.some(s => s.id === activeSuiteId) ? activeSuiteId : state.suites[0]?.id || 1;
+  activeSuiteId = guestSession?.suiteId || activeSuiteId;
+  if (!state.suites.some(s => Number(s.id) === Number(activeSuiteId))) {
+    logoutGuest();
+    return;
+  }
   saveState(state);
   render();
 }
@@ -26,6 +37,7 @@ function bindEvents() {
     const action = button.dataset.action;
     const id = Number(button.dataset.id || 0);
 
+    if (action === "logout") logoutGuest();
     if (action === "modal") openModal(button.dataset.modal, id);
     if (action === "close") closeModal();
     if (action === "breakfast") submitBreakfast();
@@ -35,16 +47,20 @@ function bindEvents() {
     if (action === "call") callConcierge();
   });
 
-  document.addEventListener("change", event => {
-    if (event.target.id === "suiteSelect") {
-      activeSuiteId = Number(event.target.value);
-      updateUrlSuite();
-      render();
+  document.addEventListener("submit", event => {
+    if (event.target.id === "guestLoginForm") {
+      event.preventDefault();
+      loginGuest();
     }
   });
 }
 
 function render() {
+  if (!guestSession) {
+    renderGuestLogin();
+    return;
+  }
+
   const suite = currentSuite();
   const reservation = currentReservation();
   const suiteMessages = reservation
@@ -68,6 +84,7 @@ function render() {
         <div class="nav-actions">
           <button class="btn icon" data-action="copy-wifi" aria-label="Copier Wi-Fi"><i class="ti ti-wifi"></i></button>
           <button class="btn" data-action="modal" data-modal="message"><i class="ti ti-message-circle"></i><span>Message</span></button>
+          <button class="btn" data-action="logout"><i class="ti ti-logout"></i><span>Deconnexion</span></button>
           <button class="btn primary" data-action="call"><i class="ti ti-phone"></i><span>Appeler</span></button>
         </div>
       </nav>
@@ -98,15 +115,13 @@ function render() {
       </header>
 
       <main class="main">
-        ${state.settings.guestShowSuitePicker === "no" ? "" : `<div class="suite-picker">
+        <div class="suite-picker locked">
           <div class="field">
-            <label for="suiteSelect">Votre logement</label>
-            <select id="suiteSelect">
-              ${state.suites.map(s => `<option value="${s.id}" ${s.id === activeSuiteId ? "selected" : ""}>${esc(s.name)}</option>`).join("")}
-            </select>
+            <label>Votre logement</label>
+            <div class="locked-suite"><i class="ti ti-home-check"></i>${esc(suite.name)}</div>
           </div>
           <button class="btn primary" data-action="modal" data-modal="message"><i class="ti ti-send"></i>Contacter la conciergerie</button>
-        </div>`}
+        </div>
 
         <section>
           <div class="section-head">
@@ -216,6 +231,60 @@ function render() {
     <div class="modal" id="guestModal"></div>
     <div class="toast" id="toast"></div>
   `;
+}
+
+function renderGuestLogin(error = "") {
+  document.documentElement.style.setProperty("--navy", state.settings.primaryColor || "#183342");
+  document.documentElement.style.setProperty("--gold", state.settings.accentColor || "#b99655");
+  app.innerHTML = `
+    <main class="auth-screen">
+      <form class="auth-card" id="guestLoginForm">
+        <div class="brand-mark">M</div>
+        <div>
+          <div class="auth-eyebrow">Espace client</div>
+          <h1>Votre logement</h1>
+          <p>Connectez-vous avec l'identifiant de votre logement.</p>
+        </div>
+        <label>
+          Identifiant
+          <input id="guestUsername" type="text" autocomplete="username" required>
+        </label>
+        <label>
+          Mot de passe
+          <input id="guestPassword" type="password" autocomplete="current-password" required>
+        </label>
+        ${error ? `<div class="auth-error">${esc(error)}</div>` : ""}
+        <button class="btn primary" type="submit"><i class="ti ti-lock-open"></i>Se connecter</button>
+      </form>
+    </main>
+  `;
+}
+
+function loginGuest() {
+  const username = value("guestUsername").trim();
+  const password = value("guestPassword");
+  const suite = state.suites.find(item => {
+    const login = suiteLogin(item);
+    return login.username === username && login.password === password;
+  });
+
+  if (!suite) {
+    renderGuestLogin("Identifiant ou mot de passe incorrect.");
+    return;
+  }
+
+  guestSession = { suiteId: suite.id };
+  activeSuiteId = suite.id;
+  localStorage.setItem(GUEST_AUTH_KEY, JSON.stringify(guestSession));
+  updateUrlSuite();
+  render();
+  syncServerState();
+}
+
+function logoutGuest() {
+  localStorage.removeItem(GUEST_AUTH_KEY);
+  guestSession = null;
+  renderGuestLogin();
 }
 
 function quickCard(icon, title, text, modal) {
@@ -397,6 +466,23 @@ function copyWifi() {
 function callConcierge() {
   window.location.href = `tel:${state.settings.phone.replace(/\s+/g, "")}`;
   toast("Ouverture de l'appel concierge.");
+}
+
+function loadGuestSession() {
+  try {
+    const session = JSON.parse(localStorage.getItem(GUEST_AUTH_KEY) || "null");
+    if (!session?.suiteId) return null;
+    return state.suites.some(suite => Number(suite.id) === Number(session.suiteId)) ? session : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function suiteLogin(suite) {
+  return {
+    username: suite.clientLogin?.username || suite.name,
+    password: suite.clientLogin?.password || ""
+  };
 }
 
 function getInitialSuiteId() {

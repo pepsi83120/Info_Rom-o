@@ -55,7 +55,7 @@ function hydrate(saved) {
   const fresh = clone(defaultState);
   return {
     settings: { ...fresh.settings, ...(saved.settings || {}) },
-    suites: Array.isArray(saved.suites) ? saved.suites : fresh.suites,
+    suites: hydrateSuites(saved.suites, fresh.suites),
     reservations: Array.isArray(saved.reservations) ? saved.reservations : fresh.reservations,
     breakfasts: Array.isArray(saved.breakfasts) ? saved.breakfasts : fresh.breakfasts,
     tasks: Array.isArray(saved.tasks) ? saved.tasks : fresh.tasks,
@@ -64,6 +64,22 @@ function hydrate(saved) {
     services: Array.isArray(saved.services) ? saved.services : fresh.services,
     messages: Array.isArray(saved.messages) ? saved.messages : fresh.messages
   };
+}
+
+function hydrateSuites(savedSuites, freshSuites) {
+  if (!Array.isArray(savedSuites)) return freshSuites;
+
+  return savedSuites.map(savedSuite => {
+    const freshSuite = freshSuites.find(suite => Number(suite.id) === Number(savedSuite.id)) || {};
+    return {
+      ...freshSuite,
+      ...savedSuite,
+      clientLogin: {
+        ...(freshSuite.clientLogin || {}),
+        ...(savedSuite.clientLogin || {})
+      }
+    };
+  });
 }
 
 function hydrateTemperatures(saved, fresh) {

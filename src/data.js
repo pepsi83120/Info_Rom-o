@@ -12,10 +12,22 @@ const sharedAccess = {
   arrivalInstructions: "Horaires piscine : 10h00 - 20h00."
 };
 
+const clientPasswords = {
+  1: "Minivillarose48291",
+  2: "Minivillaverte73504",
+  3: "Minivillableue19682",
+  4: "Minivillajaune58437",
+  5: "CottageJuliette92015"
+};
+
 function suite(id, name, guests, surface, nightlyRate, color, category = "Hebergement de charme") {
   return {
     id,
     name,
+    clientLogin: {
+      username: name,
+      password: clientPasswords[id]
+    },
     category,
     publicName: name,
     villaType: category,
@@ -86,7 +98,7 @@ export const defaultState = {
     guestContactTitle: "La villa Romeo",
     guestBreakfastDefaultOrder: "2 cafes, 2 jus d'orange, viennoiseries et pain frais.",
     guestBreakfastOptions: "Petit-dejeuner classique",
-    guestShowSuitePicker: "yes",
+    guestShowSuitePicker: "no",
     guestFooterText: "Nous vous souhaitons un tres beau sejour a La villa Romeo."
   },
   suites: [
