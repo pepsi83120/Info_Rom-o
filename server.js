@@ -222,16 +222,78 @@ function handleStateApi(request, response) {
   }
 
   if (request.method === "POST") {
-    readBody(request, (body) => {
+    readBody(request, async (body) => {
       try {
-        const parsed = JSON.parse(body || "{}");
+        const newState = JSON.parse(body || "{}");
+
+        // Charger l'ancien state pour comparer
+        let oldState = { messages: [], breakfasts: [], tasks: [] };
+        try {
+          oldState = JSON.parse(fs.readFileSync(stateFile, "utf8") || "{}");
+        } catch {}
+
         fs.mkdirSync(storageDir, { recursive: true });
-        fs.writeFileSync(stateFile, JSON.stringify(parsed, null, 2), "utf8");
+        fs.writeFileSync(stateFile, JSON.stringify(newState, null, 2), "utf8");
         response.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
         response.end(JSON.stringify({ ok: true }));
+
+        // Détecter les nouveaux messages clients (incoming)
+        const oldMsgIds = new Set((oldState.messages || []).map(m => m.id));
+        const newMessages = (newState.messages || []).filter(m =>
+          !oldMsgIds.has(m.id) && m.direction === "incoming"
+        );
+        for (const msg of newMessages) {
+          const suiteName = (newState.suites || []).find(s => Number(s.id) === Number(msg.suiteId))?.name || "Logement";
+          await sendPushToAll({
+            title: `Message de ${msg.guest || "Client"} — ${suiteName}`,
+            body: msg.body ? msg.body.slice(0, 100) : msg.subject || "Nouvelle demande",
+            icon: "/assets/icons/icon-192.png",
+            badge: "/assets/icons/favicon-32.png",
+            tag: `villa-romeo-message-${msg.id}`,
+            url: "/",
+            timestamp: Date.now()
+          });
+        }
+
+        // Détecter les nouveaux petits-déjeuners
+        const oldBfIds = new Set((oldState.breakfasts || []).map(b => b.id));
+        const newBreakfasts = (newState.breakfasts || []).filter(b => !oldBfIds.has(b.id));
+        for (const bf of newBreakfasts) {
+          const suiteName = (newState.suites || []).find(s => Number(s.id) === Number(bf.suiteId))?.name || "Logement";
+          await sendPushToAll({
+            title: `Petit-déjeuner — ${suiteName}`,
+            body: `${bf.people} pers. le ${bf.date} à ${bf.time}`,
+            icon: "/assets/icons/icon-192.png",
+            badge: "/assets/icons/favicon-32.png",
+            tag: `villa-romeo-breakfast-${bf.id}`,
+            url: "/",
+            timestamp: Date.now()
+          });
+        }
+
+        // Détecter les nouvelles inscriptions événements
+        const oldEventMap = new Map((oldState.events || []).map(e => [e.id, (e.registrations || []).map(r => r.id)]));
+        for (const event of (newState.events || [])) {
+          const oldRegs = new Set(oldEventMap.get(event.id) || []);
+          const newRegs = (event.registrations || []).filter(r => !oldRegs.has(r.id));
+          for (const reg of newRegs) {
+            await sendPushToAll({
+              title: `Inscription — ${event.title}`,
+              body: `${reg.guest || "Client"} — ${reg.people || 1} pers.`,
+              icon: "/assets/icons/icon-192.png",
+              badge: "/assets/icons/favicon-32.png",
+              tag: `villa-romeo-event-${event.id}-${reg.id}`,
+              url: "/",
+              timestamp: Date.now()
+            });
+          }
+        }
+
       } catch (error) {
-        response.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
-        response.end(JSON.stringify({ ok: false, error: "Invalid JSON" }));
+        if (!response.headersSent) {
+          response.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+          response.end(JSON.stringify({ ok: false, error: "Invalid JSON" }));
+        }
       }
     });
     return;
