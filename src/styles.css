@@ -340,6 +340,13 @@ button {
   gap: 10px;
 }
 
+.install-btn {
+  border-color: rgba(201, 167, 101, .46);
+  color: #121719;
+  background: linear-gradient(135deg, var(--gold), var(--gold-2));
+  font-weight: 900;
+}
+
 .mobile-menu {
   display: none !important;
 }
@@ -1681,17 +1688,32 @@ tbody tr:hover td {
   .topbar {
     height: auto;
     min-height: 72px;
-    align-items: flex-start;
+    align-items: stretch;
+    flex-direction: column;
     padding: 14px 16px;
+    gap: 12px;
   }
 
   .top-actions {
-    flex-wrap: wrap;
-    justify-content: flex-end;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+  }
+
+  .top-actions .btn {
+    width: 100%;
+    min-height: 44px;
+    padding: 9px 10px;
+    border-radius: 12px;
+  }
+
+  .top-actions .install-btn {
+    grid-column: 1 / -1;
   }
 
   .content {
-    padding: 18px 16px 32px;
+    padding: 16px 12px 32px;
   }
 
   .hero-panel {
@@ -1718,10 +1740,69 @@ tbody tr:hover td {
     display: flex;
     flex-direction: column;
     align-items: stretch;
+    gap: 10px;
+  }
+
+  .panel,
+  .hero-panel,
+  .modal-card {
+    border-radius: 12px;
+  }
+
+  .panel-head,
+  .panel-body {
+    padding: 14px;
+  }
+
+  .page-title {
+    font-size: 27px;
+  }
+
+  .page-subtitle {
+    font-size: 12px;
+  }
+
+  input,
+  textarea,
+  select {
+    min-height: 46px;
+    font-size: 16px;
+  }
+
+  .modal {
+    align-items: flex-end;
+    padding: 10px;
+  }
+
+  .modal-card {
+    width: 100%;
+    max-height: min(86vh, 760px);
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  .auth-screen {
+    align-items: start;
+    padding: 18px 12px;
+  }
+
+  .auth-card {
+    padding: 22px;
+    border-radius: 14px;
   }
 
   .suite-actions {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 430px) {
+  .top-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-title {
+    font-size: 43px;
   }
 }
 

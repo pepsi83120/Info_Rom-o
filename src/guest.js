@@ -3,6 +3,7 @@ import { loadServerState, loadState, nextId, saveState } from "./store.js";
 const app = document.getElementById("guestApp");
 const GUEST_AUTH_KEY = "villa-romeo-guest-auth-v1";
 
+let installPromptEvent = null;
 let state = loadState();
 let guestSession = loadGuestSession();
 let activeSuiteId = guestSession?.suiteId || getInitialSuiteId();
@@ -10,6 +11,11 @@ let toastTimer = null;
 
 bootGuest();
 bindEvents();
+
+window.addEventListener("beforeinstallprompt", event => {
+  event.preventDefault();
+  installPromptEvent = event;
+});
 
 function bootGuest() {
   render();
@@ -38,6 +44,7 @@ function bindEvents() {
     const id = Number(button.dataset.id || 0);
 
     if (action === "logout") logoutGuest();
+    if (action === "install-app") installApp();
     if (action === "modal") openModal(button.dataset.modal, id);
     if (action === "close") closeModal();
     if (action === "breakfast") submitBreakfast();
@@ -81,6 +88,7 @@ function render() {
             <div class="brand-sub">${esc(state.settings.descriptor || "Portail invite")}</div>
           </div>
         </div>
+        <button class="btn install-btn" data-action="install-app"><i class="ti ti-device-mobile-down"></i><span>Télécharger l'appli</span></button>
         <div class="nav-actions">
           <button class="btn icon" data-action="copy-wifi" aria-label="Copier Wi-Fi"><i class="ti ti-wifi"></i></button>
           <button class="btn" data-action="modal" data-modal="message"><i class="ti ti-message-circle"></i><span>Message</span></button>
@@ -285,6 +293,18 @@ function logoutGuest() {
   localStorage.removeItem(GUEST_AUTH_KEY);
   guestSession = null;
   renderGuestLogin();
+}
+
+async function installApp() {
+  if (installPromptEvent) {
+    installPromptEvent.prompt();
+    await installPromptEvent.userChoice;
+    installPromptEvent = null;
+    return;
+  }
+
+  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  toast(isIos ? "Sur iPhone : bouton Partager, puis Ajouter a l'ecran d'accueil." : "Ouvre le menu du navigateur puis choisis Installer l'application.");
 }
 
 function quickCard(icon, title, text, modal) {

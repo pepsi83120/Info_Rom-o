@@ -197,6 +197,14 @@ div {
   align-items: center;
 }
 
+.install-btn {
+  border-color: rgba(201, 167, 101, .46);
+  color: #111719;
+  background: linear-gradient(135deg, var(--gold), var(--gold-2));
+  font-weight: 900;
+  white-space: nowrap;
+}
+
 .btn {
   min-height: 40px;
   border: 1px solid var(--line);
@@ -964,9 +972,12 @@ select:focus {
   .guest-nav {
     position: sticky;
     top: 0;
-    align-items: center;
+    align-items: stretch;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
     padding: 10px 12px;
-    min-height: 62px;
+    min-height: 0;
+    gap: 9px;
   }
 
   .brand {
@@ -990,6 +1001,12 @@ select:focus {
     display: none;
   }
 
+  .install-btn {
+    width: 100%;
+    min-height: 44px;
+    border-radius: 14px;
+  }
+
   .nav-actions {
     position: fixed;
     left: 10px;
@@ -997,7 +1014,7 @@ select:focus {
     bottom: calc(10px + env(safe-area-inset-bottom));
     z-index: 50;
     display: grid;
-    grid-template-columns: 48px 1fr 1fr;
+    grid-template-columns: 48px 1fr 1fr 1fr;
     gap: 8px;
     padding: 8px;
     border: 1px solid rgba(221, 194, 130, .18);
@@ -1093,7 +1110,7 @@ select:focus {
   }
 
   .main {
-    width: min(100% - 24px, 1220px);
+    width: min(100% - 18px, 1220px);
     padding: 20px 0 26px;
   }
 
@@ -1130,6 +1147,8 @@ select:focus {
     padding: 12px;
     gap: 10px;
     margin-bottom: 14px;
+    display: grid;
+    grid-template-columns: 1fr;
   }
 
   .quick-grid {
@@ -1283,6 +1302,16 @@ select:focus {
     border-radius: 12px;
   }
 
+  .auth-screen {
+    align-items: start;
+    padding: 18px 12px;
+  }
+
+  .auth-card {
+    padding: 22px;
+    border-radius: 14px;
+  }
+
   .save-row .btn {
     min-height: 48px;
     border-radius: 14px;
@@ -1299,12 +1328,16 @@ select:focus {
 
 @media (max-width: 420px) {
   .nav-actions {
-    grid-template-columns: 46px 1fr 1fr;
+    grid-template-columns: 44px 1fr 1fr 1fr;
+    left: 6px;
+    right: 6px;
+    gap: 6px;
   }
 
   .nav-actions .btn {
-    font-size: 12px;
+    font-size: 11px;
     gap: 5px;
+    padding: 8px 6px;
   }
 
   .hero h1 {

@@ -8,6 +8,7 @@ const ADMIN_CREDENTIALS = {
   password: "Jajap00mp00m*"
 };
 
+let installPromptEvent = null;
 let state = loadState();
 let isAdminAuthenticated = localStorage.getItem(ADMIN_AUTH_KEY) === "ok";
 let view = "dashboard";
@@ -25,6 +26,11 @@ let filters = {
 };
 
 boot();
+
+window.addEventListener("beforeinstallprompt", event => {
+  event.preventDefault();
+  installPromptEvent = event;
+});
 
 function boot() {
   if (!isAdminAuthenticated) {
@@ -138,6 +144,7 @@ function shell() {
             </div>
           </div>
           <div class="top-actions">
+            <button class="btn install-btn" data-action="install-app"><i class="ti ti-device-mobile-down"></i> Télécharger l'appli</button>
             <button class="btn icon" data-view="messages" aria-label="Messages">
               <i class="ti ti-bell"></i>
               <span class="notification-dot" id="notificationDot"></span>
@@ -218,6 +225,7 @@ function handleAction(action, button) {
   const actions = {
     "toggle-sidebar": () => setSidebarOpen(!document.getElementById("sidebar").classList.contains("open")),
     "close-sidebar": () => setSidebarOpen(false),
+    "install-app": () => installApp(),
     "logout-admin": () => logoutAdmin(),
     "open-guest": () => openGuestPortal(),
     "export": () => exportData(),
@@ -268,6 +276,18 @@ function logoutAdmin() {
   localStorage.removeItem(ADMIN_AUTH_KEY);
   isAdminAuthenticated = false;
   renderAdminLogin();
+}
+
+async function installApp() {
+  if (installPromptEvent) {
+    installPromptEvent.prompt();
+    await installPromptEvent.userChoice;
+    installPromptEvent = null;
+    return;
+  }
+
+  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  toast(isIos ? "Sur iPhone : bouton Partager, puis Ajouter a l'ecran d'accueil." : "Ouvre le menu du navigateur puis choisis Installer l'application.");
 }
 
 function render() {
