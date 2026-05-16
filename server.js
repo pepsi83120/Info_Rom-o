@@ -237,57 +237,7 @@ function handleStateApi(request, response) {
         response.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
         response.end(JSON.stringify({ ok: true }));
 
-        // Détecter les nouveaux messages clients (incoming)
-        const oldMsgIds = new Set((oldState.messages || []).map(m => m.id));
-        const newMessages = (newState.messages || []).filter(m =>
-          !oldMsgIds.has(m.id) && m.direction === "incoming"
-        );
-        for (const msg of newMessages) {
-          const suiteName = (newState.suites || []).find(s => Number(s.id) === Number(msg.suiteId))?.name || "Logement";
-          await sendPushToAll({
-            title: `Message de ${msg.guest || "Client"} — ${suiteName}`,
-            body: msg.body ? msg.body.slice(0, 100) : msg.subject || "Nouvelle demande",
-            icon: "/assets/icons/icon-192.png",
-            badge: "/assets/icons/favicon-32.png",
-            tag: `villa-romeo-message-${msg.id}`,
-            url: "/",
-            timestamp: Date.now()
-          });
-        }
-
-        // Détecter les nouveaux petits-déjeuners
-        const oldBfIds = new Set((oldState.breakfasts || []).map(b => b.id));
-        const newBreakfasts = (newState.breakfasts || []).filter(b => !oldBfIds.has(b.id));
-        for (const bf of newBreakfasts) {
-          const suiteName = (newState.suites || []).find(s => Number(s.id) === Number(bf.suiteId))?.name || "Logement";
-          await sendPushToAll({
-            title: `Petit-déjeuner — ${suiteName}`,
-            body: `${bf.people} pers. le ${bf.date} à ${bf.time}`,
-            icon: "/assets/icons/icon-192.png",
-            badge: "/assets/icons/favicon-32.png",
-            tag: `villa-romeo-breakfast-${bf.id}`,
-            url: "/",
-            timestamp: Date.now()
-          });
-        }
-
-        // Détecter les nouvelles inscriptions événements
-        const oldEventMap = new Map((oldState.events || []).map(e => [e.id, (e.registrations || []).map(r => r.id)]));
-        for (const event of (newState.events || [])) {
-          const oldRegs = new Set(oldEventMap.get(event.id) || []);
-          const newRegs = (event.registrations || []).filter(r => !oldRegs.has(r.id));
-          for (const reg of newRegs) {
-            await sendPushToAll({
-              title: `Inscription — ${event.title}`,
-              body: `${reg.guest || "Client"} — ${reg.people || 1} pers.`,
-              icon: "/assets/icons/icon-192.png",
-              badge: "/assets/icons/favicon-32.png",
-              tag: `villa-romeo-event-${event.id}-${reg.id}`,
-              url: "/",
-              timestamp: Date.now()
-            });
-          }
-        }
+        detectAndNotify(oldState, newState);
 
       } catch (error) {
         if (!response.headersSent) {
@@ -386,6 +336,129 @@ function handleIcsApi(url, response) {
   });
 
   calendarRequest.setTimeout(15000, () => calendarRequest.destroy());
+}
+
+function suiteName(suites, id) {
+  return (suites || []).find(s => Number(s.id) === Number(id))?.name || "Logement";
+}
+
+async function detectAndNotify(oldState, newState) {
+  const suites = newState.suites || [];
+
+  // Nouveaux messages clients (incoming = envoyés par le client depuis guest.js)
+  const oldMsgIds = new Set((oldState.messages || []).map(m => String(m.id)));
+  const newMsgs = (newState.messages || []).filter(m =>
+    !oldMsgIds.has(String(m.id)) && m.direction === "incoming"
+  );
+  for (const msg of newMsgs) {
+    await sendPushToAll({
+      title: `💬 Message — ${suiteName(suites, msg.suiteId)}`,
+      body: `${msg.guest || "Client"} : ${(msg.body || msg.subject || "Nouvelle demande").slice(0, 120)}`,
+      icon: "/assets/icons/icon-192.png",
+      badge: "/assets/icons/favicon-32.png",
+      tag: `msg-${msg.id}`,
+      url: "/",
+      timestamp: Date.now()
+    });
+  }
+
+  // Nouveaux petits-déjeuners
+  const oldBfIds = new Set((oldState.breakfasts || []).map(b => String(b.id)));
+  const newBfs = (newState.breakfasts || []).filter(b => !oldBfIds.has(String(b.id)));
+  for (const bf of newBfs) {
+    await sendPushToAll({
+      title: `☕ Petit-déjeuner — ${suiteName(suites, bf.suiteId)}`,
+      body: `${bf.people} pers. — ${bf.date} à ${bf.time}${bf.order ? " — " + bf.order.slice(0, 60) : ""}`,
+      icon: "/assets/icons/icon-192.png",
+      badge: "/assets/icons/favicon-32.png",
+      tag: `bf-${bf.id}`,
+      url: "/",
+      timestamp: Date.now()
+    });
+  }
+
+  // Nouvelles réservations
+  const oldResIds = new Set((oldState.reservations || []).map(r => String(r.id)));
+  const newRes = (newState.reservations || []).filter(r => !oldResIds.has(String(r.id)));
+  for (const res of newRes) {
+    await sendPushToAll({
+      title: `📅 Nouvelle réservation — ${suiteName(suites, res.suiteId)}`,
+      body: `${res.guest || "Client"} — ${res.arrival} → ${res.departure} (${res.guests} pers.)`,
+      icon: "/assets/icons/icon-192.png",
+      badge: "/assets/icons/favicon-32.png",
+      tag: `res-${res.id}`,
+      url: "/",
+      timestamp: Date.now()
+    });
+  }
+
+  // Réservations modifiées (statut changé)
+  const oldResMap = new Map((oldState.reservations || []).map(r => [String(r.id), r]));
+  for (const res of (newState.reservations || [])) {
+    const old = oldResMap.get(String(res.id));
+    if (old && old.status !== res.status) {
+      await sendPushToAll({
+        title: `📋 Réservation mise à jour — ${suiteName(suites, res.suiteId)}`,
+        body: `${res.guest || "Client"} : ${old.status} → ${res.status}`,
+        icon: "/assets/icons/icon-192.png",
+        badge: "/assets/icons/favicon-32.png",
+        tag: `res-update-${res.id}`,
+        url: "/",
+        timestamp: Date.now()
+      });
+    }
+  }
+
+  // Nouvelles tâches prioritaires
+  const oldTaskIds = new Set((oldState.tasks || []).map(t => String(t.id)));
+  const newTasks = (newState.tasks || []).filter(t => !oldTaskIds.has(String(t.id)));
+  for (const task of newTasks) {
+    const emoji = task.priority === "high" ? "🚨" : task.type === "housekeeping" ? "🧹" : "📌";
+    await sendPushToAll({
+      title: `${emoji} Tâche — ${suiteName(suites, task.suiteId)}`,
+      body: `${task.title} — ${task.owner || "Non assigné"} — Échéance : ${task.due || "à définir"}`,
+      icon: "/assets/icons/icon-192.png",
+      badge: "/assets/icons/favicon-32.png",
+      tag: `task-${task.id}`,
+      url: "/",
+      timestamp: Date.now()
+    });
+  }
+
+  // Nouvelles inscriptions événements
+  const oldEventMap = new Map((oldState.events || []).map(e => [String(e.id), new Set((e.registrations || []).map(r => String(r.id)))]));
+  for (const event of (newState.events || [])) {
+    const oldRegIds = oldEventMap.get(String(event.id)) || new Set();
+    const newRegs = (event.registrations || []).filter(r => !oldRegIds.has(String(r.id)));
+    for (const reg of newRegs) {
+      await sendPushToAll({
+        title: `🎉 Inscription — ${event.title}`,
+        body: `${reg.guest || "Client"} — ${reg.people || 1} pers.${reg.phone ? " — " + reg.phone : ""}`,
+        icon: "/assets/icons/icon-192.png",
+        badge: "/assets/icons/favicon-32.png",
+        tag: `event-${event.id}-reg-${reg.id}`,
+        url: "/",
+        timestamp: Date.now()
+      });
+    }
+  }
+
+  // Statuts housekeeping changés
+  const oldSuiteMap = new Map((oldState.suites || []).map(s => [String(s.id), s]));
+  for (const suite of (newState.suites || [])) {
+    const old = oldSuiteMap.get(String(suite.id));
+    if (old && old.housekeeping !== suite.housekeeping) {
+      await sendPushToAll({
+        title: `🏠 Housekeeping — ${suite.name}`,
+        body: `Statut : ${suite.housekeeping}`,
+        icon: "/assets/icons/icon-192.png",
+        badge: "/assets/icons/favicon-32.png",
+        tag: `hk-${suite.id}`,
+        url: "/",
+        timestamp: Date.now()
+      });
+    }
+  }
 }
 
 server.listen(port, host, () => {
