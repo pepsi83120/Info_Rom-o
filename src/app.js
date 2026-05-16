@@ -3,6 +3,7 @@ import { clone, downloadJson, loadServerState, loadState, nextId, resetState, sa
 
 const app = document.getElementById("app");
 const ADMIN_AUTH_KEY = "villa-romeo-admin-auth-v1";
+const GUEST_AUTH_KEY = "villa-romeo-guest-auth-v1";
 const ADMIN_CREDENTIALS = {
   username: "La Villa Roméo",
   password: "Jajap00mp00m*"
@@ -38,7 +39,7 @@ if ("serviceWorker" in navigator) {
 
 function boot() {
   if (!isAdminAuthenticated) {
-    renderAdminLogin();
+    renderLoginChoice();
     return;
   }
 
@@ -52,23 +53,28 @@ function startAdminApp() {
   syncServerState();
 }
 
-function renderAdminLogin(error = "") {
+function renderLoginChoice(mode = "admin", error = "") {
+  const isAdmin = mode === "admin";
   app.innerHTML = `
     <main class="auth-screen">
-      <form class="auth-card" id="adminLoginForm">
+      <form class="auth-card" id="loginForm">
         <div class="brand-mark">M</div>
         <div>
-          <div class="auth-eyebrow">Acces prive</div>
-          <h1>Administration</h1>
-          <p>Connectez-vous pour gerer La Villa Romeo.</p>
+          <div class="auth-eyebrow">La Villa Romeo</div>
+          <h1>${isAdmin ? "Administration" : "Espace client"}</h1>
+          <p>${isAdmin ? "Connectez-vous pour gerer La Villa Romeo." : "Connectez-vous au logement reserve."}</p>
+        </div>
+        <div class="auth-switch" role="tablist" aria-label="Type de connexion">
+          <button class="${isAdmin ? "active" : ""}" type="button" data-auth-mode="admin"><i class="ti ti-shield-lock"></i>Admin</button>
+          <button class="${!isAdmin ? "active" : ""}" type="button" data-auth-mode="client"><i class="ti ti-home"></i>Client</button>
         </div>
         <label>
           Identifiant
-          <input id="adminUsername" type="text" autocomplete="username" required>
+          <input id="loginUsername" type="text" autocomplete="username" required>
         </label>
         <label>
           Mot de passe
-          <input id="adminPassword" type="password" autocomplete="current-password" required>
+          <input id="loginPassword" type="password" autocomplete="current-password" required>
         </label>
         ${error ? `<div class="auth-error">${esc(error)}</div>` : ""}
         <button class="btn primary" type="submit"><i class="ti ti-lock-open"></i>Se connecter</button>
@@ -76,19 +82,51 @@ function renderAdminLogin(error = "") {
     </main>
   `;
 
-  document.getElementById("adminLoginForm").addEventListener("submit", event => {
-    event.preventDefault();
-    const username = val("adminUsername");
-    const password = val("adminPassword");
-    if (sameCredential(username, ADMIN_CREDENTIALS.username) && password === ADMIN_CREDENTIALS.password) {
-      localStorage.setItem(ADMIN_AUTH_KEY, "ok");
-      isAdminAuthenticated = true;
-      startAdminApp();
-      return;
-    }
-
-    renderAdminLogin("Identifiant ou mot de passe incorrect.");
+  document.querySelectorAll("[data-auth-mode]").forEach(button => {
+    button.addEventListener("click", () => renderLoginChoice(button.dataset.authMode));
   });
+
+  document.getElementById("loginForm").addEventListener("submit", event => {
+    event.preventDefault();
+    isAdmin ? loginAdmin() : loginClient();
+  });
+}
+
+function loginAdmin() {
+  const username = val("loginUsername");
+  const password = val("loginPassword");
+  if (sameCredential(username, ADMIN_CREDENTIALS.username) && password === ADMIN_CREDENTIALS.password) {
+    localStorage.setItem(ADMIN_AUTH_KEY, "ok");
+    isAdminAuthenticated = true;
+    startAdminApp();
+    return;
+  }
+
+  renderLoginChoice("admin", "Identifiant ou mot de passe admin incorrect.");
+}
+
+function loginClient() {
+  const username = val("loginUsername");
+  const password = val("loginPassword");
+  const suite = state.suites.find(item => {
+    const login = suiteLogin(item);
+    return sameCredential(username, login.username) && password === login.password;
+  });
+
+  if (!suite) {
+    renderLoginChoice("client", "Identifiant ou mot de passe client incorrect.");
+    return;
+  }
+
+  localStorage.setItem(GUEST_AUTH_KEY, JSON.stringify({ suiteId: suite.id }));
+  window.location.href = `guest.html?suite=${encodeURIComponent(suite.id)}`;
+}
+
+function suiteLogin(suite) {
+  return {
+    username: suite.clientLogin?.username || suite.name,
+    password: suite.clientLogin?.password || ""
+  };
 }
 
 function sameCredential(input, expected) {
@@ -153,10 +191,10 @@ function shell() {
               <i class="ti ti-bell"></i>
               <span class="notification-dot" id="notificationDot"></span>
             </button>
-            <button class="btn" data-action="open-guest"><i class="ti ti-external-link"></i> Portail client</button>
-            <button class="btn" data-action="logout-admin"><i class="ti ti-logout"></i> Deconnexion</button>
+            <button class="btn mobile-hide" data-action="open-guest"><i class="ti ti-external-link"></i> Portail client</button>
+            <button class="btn mobile-hide" data-action="logout-admin"><i class="ti ti-logout"></i> Deconnexion</button>
             <button class="btn" data-action="export"><i class="ti ti-download"></i> Export</button>
-            <button class="btn gold" data-action="new-suite"><i class="ti ti-home-plus"></i> Logement</button>
+            <button class="btn gold mobile-hide" data-action="new-suite"><i class="ti ti-home-plus"></i> Logement</button>
           </div>
         </header>
         <div class="content">
@@ -279,7 +317,7 @@ function handleAction(action, button) {
 function logoutAdmin() {
   localStorage.removeItem(ADMIN_AUTH_KEY);
   isAdminAuthenticated = false;
-  renderAdminLogin();
+  renderLoginChoice();
 }
 
 async function installApp() {
