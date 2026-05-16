@@ -2081,29 +2081,11 @@ function copyWifi(id) {
 function printQr(id) {
   const s = state.suites.find(item => item.id === id);
   if (!s) return;
-  const url = clientUrl(s);
-  const win = window.open("", "_blank");
-  win.document.write(`
-    <!doctype html>
-    <html>
-      <head>
-        <title>QR ${esc(s.name)}</title>
-        <style>
-          body{font-family:Inter,Arial,sans-serif;color:#183342;text-align:center;padding:50px;background:#f8f3eb}
-          h1{font-family:Georgia,serif;font-size:42px;margin:0}
-          p{color:#697173}
-          .qr{width:280px;height:280px;border:14px solid #fff;box-shadow:0 16px 40px #c9c1b4;margin:30px auto;object-fit:contain}
-        </style>
-      </head>
-      <body>
-        <h1>${esc(s.name)}</h1>
-        <p>${esc(url)}</p>
-        <img class="qr" src="${escAttr(qrImageUrl(url, 420))}" alt="QR ${escAttr(s.name)}">
-        <script>window.print()<\/script>
-      </body>
-    </html>
-  `);
-  win.document.close();
+  const printUrl = `print-qr.html?suite=${encodeURIComponent(s.id)}`;
+  const win = window.open(printUrl, "_blank", "noopener");
+  if (!win) {
+    toast("Autorise les pop-ups pour ouvrir la page d'impression.");
+  }
 }
 
 function openGuestPortal() {
