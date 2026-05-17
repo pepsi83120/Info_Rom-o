@@ -408,7 +408,7 @@ function renderNav() {
     ${navItem("messages", "ti-message-circle", "Messages", unread)}
     ${navItem("tasks", "ti-list-check", "A faire", openTasks)}
     ${navItem("events", "ti-calendar-star", "Nos animations", activeEventsCount())}
-    ${navItem("agenda", "ti-calendar-event", "Agenda")}
+    ${navItem("agenda", "ti-calendar-event", "Agenda ville")}
     ${navItem("temperatures", "ti-temperature", "Temperatures")}
     ${navItem("payments", "ti-credit-card", "Paiements", paymentDue)}
     ${navItem("analytics", "ti-chart-line", "Chiffres")}
@@ -446,7 +446,7 @@ function renderHeader() {
     payments: ["Paiements", "Soldes, acomptes et encaissements sejours"],
     tasks: ["A faire", "Menage, maintenance et conciergerie terrain"],
     events: ["Nos animations", "Experiences et annonces visibles cote client"],
-    agenda: ["Agenda", "Sorties, marches et activites autour de la villa"],
+    agenda: ["Agenda ville", "Sorties, marches et activites autour de la villa"],
     temperatures: ["Temperatures", "Piscine, air et mer matin, apres-midi et soir"],
     messages: ["Messages", "Demandes voyageurs et priorites"],
     qr: ["QR Codes", "Portails invites par logement"],
@@ -746,7 +746,7 @@ function renderReservations() {
   const filtered = state.reservations.filter(r => {
     const query = filters.reservationQuery.toLowerCase();
     const suite = suiteName(r.suiteId).toLowerCase();
-    return (filters.reservationStatus === "all" || r.status === filters.reservationStatus)
+    return (filters.reservationStatus === "all" || computedReservationStatus(r) === filters.reservationStatus)
       && (filters.reservationSuite === "all" || Number(r.suiteId) === Number(filters.reservationSuite))
       && (!query || r.guest.toLowerCase().includes(query) || suite.includes(query) || r.channel.toLowerCase().includes(query));
   });
@@ -764,7 +764,7 @@ function renderReservations() {
         ${planningImportPanel()}
         <div class="table-tools">
           <div class="filters">
-            ${filterSelect("Statut", "reservationStatus", filters.reservationStatus, [["all","Tous"],["confirmed","Confirmee"],["inhouse","En sejour"],["checkout","Check-out"],["raw","Sans description"]])}
+            ${filterSelect("Statut", "reservationStatus", filters.reservationStatus, [["all","Tous"],["confirmed","Confirmee"],["inhouse","En sejour"],["checkout","Check-out"],["left","Sorti"],["raw","Sans description"]])}
             ${filterSelect("Logement", "reservationSuite", filters.reservationSuite, reservationSuiteOptions())}
             ${filterText("Recherche", "reservationQuery", filters.reservationQuery)}
           </div>
@@ -818,7 +818,7 @@ function reservationTable(items) {
               <td>${esc(r.channel)}</td>
               <td>${formatMoney(r.total)}</td>
               <td>${formatMoney(r.balance)}</td>
-              <td><span class="badge ${r.status}">${reservationStatus(r.status)}</span></td>
+              <td><span class="badge ${computedReservationStatus(r)}">${reservationStatus(computedReservationStatus(r))}</span></td>
               <td>
                 <button class="btn small" data-action="edit-reservation" data-id="${r.id}"><i class="ti ti-edit"></i></button>
                 <button class="btn small danger" data-action="delete-reservation" data-id="${r.id}"><i class="ti ti-trash"></i></button>
@@ -1111,7 +1111,7 @@ function renderAgenda() {
   document.getElementById("view-agenda").innerHTML = `
     <div class="section-head" style="margin-top:0;">
       <div>
-        <div class="section-title">Agenda</div>
+        <div class="section-title">Agenda ville</div>
         <div class="section-copy">Marches, activites et sorties autour de Sainte-Maxime a partager avec vos clients.</div>
       </div>
       <button class="btn gold" data-action="new-agenda"><i class="ti ti-calendar-plus"></i>Nouvelle activite</button>
@@ -1987,7 +1987,7 @@ function modalBody(type, id) {
         ${select("Visible cote client", "modal-active", String(item.active), [["true", "Oui"], ["false", "Non"]])}
         ${area("Description", "modal-description", item.description)}
       </div>
-      <div class="save-row"><span class="hint">Ces activites apparaissent dans l'agenda du portail client.</span><button class="btn primary" data-action="save-agenda">Valider</button></div>
+      <div class="save-row"><span class="hint">Ces activites apparaissent dans l'agenda ville du portail client.</span><button class="btn primary" data-action="save-agenda">Valider</button></div>
     `;
   }
   }
@@ -2749,7 +2749,28 @@ function housekeepingLabel(value) {
 }
 
 function reservationStatus(value) {
-  return { confirmed: "Confirmee", inhouse: "En sejour", checkout: "Check-out", raw: "Sans description" }[value] || value;
+  return { confirmed: "Confirmee", inhouse: "En sejour", checkout: "Check-out", raw: "Sans description", left: "Sorti" }[value] || value;
+}
+
+function computedReservationStatus(r) {
+  // Reservations sans dates : on garde le statut manuel
+  if (!r.arrival || !r.departure) return r.status;
+  // Annulees ou sans description : statut manuel
+  if (r.status === "cancelled" || r.status === "raw") return r.status;
+
+  const todayDate = startOfDay(new Date());
+  const arrival = parseDate(r.arrival);
+  const departure = parseDate(r.departure);
+  if (!arrival || !departure) return r.status;
+
+  // Depart = aujourd hui -> check-out
+  if (departure.getTime() === todayDate.getTime()) return "checkout";
+  // Depart passe -> sorti
+  if (departure < todayDate) return "left";
+  // Arrival <= today < departure -> en cours
+  if (arrival <= todayDate && todayDate < departure) return "inhouse";
+  // Arrival dans le futur -> confirme
+  return "confirmed";
 }
 
 function breakfastStatus(value) {
