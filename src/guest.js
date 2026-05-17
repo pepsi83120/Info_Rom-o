@@ -168,21 +168,40 @@ function render() {
         </section>
 
 
-        <section class="split" style="margin-top:28px;">
+        <section style="margin-top:28px;">
           <div class="panel guest-events-panel">
             <div class="panel-head">
               <div>
-                <div class="panel-title">Evenements & sorties</div>
-                <div class="panel-sub">Suggestions selectionnees par la conciergerie.</div>
+                <div class="panel-title">Nos animations</div>
+                <div class="panel-sub">Selections et suggestions de la conciergerie.</div>
               </div>
             </div>
             <div class="panel-body">
               <div class="guest-event-list">
-                ${visibleEvents.length ? visibleEvents.map(guestEventCard).join("") : `<div class="info-item"><i class="ti ti-calendar-star"></i><div><b>Aucun evenement publie</b><br>La conciergerie ajoutera ici les suggestions du moment.</div></div>`}
+                ${visibleEvents.length ? visibleEvents.map(guestEventCard).join("") : `<div class="info-item"><i class="ti ti-calendar-star"></i><div><b>Aucune animation publiee</b><br>La conciergerie ajoutera ici les suggestions du moment.</div></div>`}
               </div>
             </div>
           </div>
+        </section>
 
+        <section id="guest-agenda-section" style="margin-top:16px;">
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <div class="panel-title">Agenda du Golfe</div>
+                <div class="panel-sub">Evenements et sorties a decouvrir autour de Sainte-Maxime.</div>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div id="guest-golfe-events" class="guest-event-list">
+                <div class="info-item"><i class="ti ti-loader-2"></i><div><b>Chargement...</b><br>Recuperation des evenements du Golfe.</div></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="split" style="margin-top:16px;">
+          <div class="panel" style="display:none;"></div>
           <div class="panel guest-temperatures-panel">
             <div class="panel-head">
               <div>
@@ -438,6 +457,7 @@ function loginGuest() {
   updateUrlSuite();
   render();
   syncServerState();
+  loadGolfeEvents();
 }
 
 function logoutGuest() {
@@ -886,4 +906,43 @@ function toast(message) {
   el.classList.add("active");
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove("active"), 2600);
+}
+
+async function loadGolfeEvents() {
+  const container = document.getElementById("guest-golfe-events");
+  if (!container) return;
+  try {
+    const res = await fetch("./api/golfe-events", { cache: "default" });
+    const events = res.ok ? await res.json() : [];
+    if (!events || !events.length) {
+      container.innerHTML = `<div class="info-item"><i class="ti ti-calendar-off"></i><div><b>Aucun evenement disponible</b><br>Revenez bientot pour decouvrir les prochaines sorties.</div></div>`;
+      return;
+    }
+    container.innerHTML = events.map(golfeEventCard).join("");
+  } catch (err) {
+    container.innerHTML = `<div class="info-item"><i class="ti ti-wifi-off"></i><div><b>Evenements indisponibles</b><br>Verifiez votre connexion et rechargez la page.</div></div>`;
+  }
+}
+
+function golfeEventCard(ev) {
+  const d = ev.eventDate ? new Date(ev.eventDate + "T00:00:00") : null;
+  const day = d ? d.getDate().toString().padStart(2, "0") : "--";
+  const month = d ? d.toLocaleDateString("fr-FR", { month: "short" }).replace(".", "").toUpperCase() : "";
+  const isToday = ev.isToday ? '<span class="badge ready" style="font-size:9px;margin-bottom:4px;">Aujourd'hui</span>' : "";
+  const img = ev.image ? `<img src="${escAttr(ev.image)}" alt="${escAttr(ev.title)}" style="width:100%;height:90px;object-fit:cover;border-radius:8px;margin-bottom:8px;">` : "";
+  return `
+    <article class="guest-event-card">
+      <div class="guest-event-date"><span>${esc(month)}</span><b>${esc(day)}</b></div>
+      <div>
+        ${isToday}
+        <div class="guest-event-meta">${esc(ev.commune || "Golfe")}${ev.time ? ` - ${esc(ev.time)}` : ""}</div>
+        <h3>${esc(ev.title)}</h3>
+        ${img}
+        <p style="color:var(--muted);font-size:13px;">${esc((ev.description || "").slice(0, 160))}</p>
+        <a href="${escAttr(ev.url)}" target="_blank" rel="noopener" class="btn small" style="margin-top:6px;display:inline-flex;align-items:center;gap:6px;">
+          <i class="ti ti-external-link"></i>En savoir plus
+        </a>
+      </div>
+    </article>
+  `;
 }
