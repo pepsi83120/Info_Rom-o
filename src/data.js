@@ -144,5 +144,6 @@ export const defaultState = {
     updatedAt: ""
   },
   services: [],
-  messages: []
+  messages: [],
+  agenda: []
 };
