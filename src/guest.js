@@ -200,8 +200,7 @@ function render() {
           </div>
         </section>
 
-        <section class="split" style="margin-top:16px;">
-          <div class="panel" style="display:none;"></div>
+        <section style="margin-top:16px;">
           <div class="panel guest-temperatures-panel">
             <div class="panel-head">
               <div>
@@ -928,7 +927,7 @@ function golfeEventCard(ev) {
   const d = ev.eventDate ? new Date(ev.eventDate + "T00:00:00") : null;
   const day = d ? d.getDate().toString().padStart(2, "0") : "--";
   const month = d ? d.toLocaleDateString("fr-FR", { month: "short" }).replace(".", "").toUpperCase() : "";
-  const isToday = ev.isToday ? '<span class="badge ready" style="font-size:9px;margin-bottom:4px;">Aujourd'hui</span>' : "";
+  const isToday = ev.isToday ? '<span class="badge ready" style="font-size:9px;margin-bottom:4px;">Aujourd&#39;hui</span>' : "";
   const img = ev.image ? `<img src="${escAttr(ev.image)}" alt="${escAttr(ev.title)}" style="width:100%;height:90px;object-fit:cover;border-radius:8px;margin-bottom:8px;">` : "";
   return `
     <article class="guest-event-card">
