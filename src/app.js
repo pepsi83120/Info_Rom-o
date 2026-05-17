@@ -1873,6 +1873,7 @@ function modalTemplate(type, id) {
     breakfast: id ? "Modifier petit-dejeuner" : "Nouvelle demande",
     task: id ? "Modifier operation" : "Nouvelle operation",
     event: id ? "Modifier evenement" : "Nouvel evenement",
+    agenda: id ? "Modifier activite" : "Nouvelle activite ville",
     service: id ? "Modifier service" : "Nouveau service",
     message: id ? "Repondre au client" : "Nouveau message client"
   };
@@ -1989,7 +1990,6 @@ function modalBody(type, id) {
       </div>
       <div class="save-row"><span class="hint">Ces activites apparaissent dans l'agenda ville du portail client.</span><button class="btn primary" data-action="save-agenda">Valider</button></div>
     `;
-  }
   }
   if (type === "message") {
     const source = id ? state.messages.find(m => m.id === id) : null;
