@@ -68,8 +68,163 @@ async function sendPushToEndpoint(endpoint, payload) {
   }
 }
 
+
+// ─── Cache scraping Golfe Saint-Tropez ───────────────────────────────────────
+let golfeEventsCache = null;
+let golfeEventsCacheAt = 0;
+const GOLFE_CACHE_TTL = 3 * 60 * 60 * 1000; // 3h
+
+async function fetchGolfeEvents() {
+  const now = Date.now();
+  if (golfeEventsCache && now - golfeEventsCacheAt < GOLFE_CACHE_TTL) {
+    return golfeEventsCache;
+  }
+
+  const url = "https://www.golfe-saint-tropez-information.com/fr/animation";
+  const html = await new Promise((resolve, reject) => {
+    const req = https.get(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; VillaRomeo/1.0)",
+        "Accept": "text/html,*/*",
+        "Accept-Language": "fr-FR,fr;q=0.9"
+      }
+    }, res => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        resolve("");
+        return;
+      }
+      let body = "";
+      res.setEncoding("utf8");
+      res.on("data", chunk => { body += chunk; if (body.length > 3_000_000) req.destroy(); });
+      res.on("end", () => resolve(body));
+    });
+    req.on("error", reject);
+    req.setTimeout(15000, () => req.destroy());
+  });
+
+  if (!html) return [];
+
+  const events = [];
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  // Regex pour extraire les blocs événements de la liste
+  // Chaque événement est un lien avec image, titre, lieu, date, description
+  const blockRe = /<a[^>]+href="(https:\/\/www\.golfe-saint-tropez-information\.com\/fr\/animation\/[^"]+)"[^>]*>\s*(?:<img[^>]+src="([^"]*)"[^>]*\/?>)?[^]*?<\/a>/gi;
+  const cardRe = /href="(https:\/\/www\.golfe-saint-tropez-information\.com\/fr\/animation\/[^"]+)"[^>]*>[\s\S]*?<img[^>]+src="([^"]*)"[\s\S]*?<\/a>/gi;
+
+  // Parser simplifié : extraire les blocs <a href="/fr/animation/...">...</a>
+  const linkBlocks = [];
+  let m;
+  const reLink = /href="(https:\/\/www\.golfe-saint-tropez-information\.com\/fr\/animation\/[^"]+)"[\s\S]*?<\/a>/gi;
+  while ((m = reLink.exec(html)) !== null && linkBlocks.length < 30) {
+    linkBlocks.push({ href: m[1], block: m[0] });
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  for (const { href, block } of linkBlocks) {
+    // Extraire l'image
+    const imgM = block.match(/src="(https:\/\/www\.golfe-saint-tropez-information\.com\/files\/[^"]+)"/);
+    const image = imgM ? imgM[1] : "";
+
+    // Extraire le texte visible (sans balises)
+    const text = block.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    if (!text || text.length < 10) continue;
+
+    // Extraire les dates dans le texte (formats: "Du lundi 16 au mardi 17 mai 2026", "Samedi 17 mai 2026", etc.)
+    const dateRe = /(?:du|le|samedi|dimanche|lundi|mardi|mercredi|jeudi|vendredi)\s+(?:\d+\s+\w+\s+(?:au\s+\w+\s+)?)?\d+\s+(janvier|février|fevrier|mars|avril|mai|juin|juillet|aout|août|septembre|octobre|novembre|décembre|decembre)\s+(\d{4})/i;
+    const dateM = text.match(dateRe);
+
+    // Extraire titre (souvent le premier texte long avant une virgule ou un retour)
+    const titleM = text.match(/^([^\n\r]{5,80}?)(?:\s{2,}|$)/);
+    const title = titleM ? titleM[1].trim() : text.slice(0, 60);
+    if (!title) continue;
+
+    // Extraire commune (après le titre, avant la date)
+    const communeM = text.match(/(?:Cavalaire|Cogolin|Gassin|Grimaud|Croix Valmer|Garde-Freinet|La Mole|Plan de la Tour|Ramatuelle|Rayol|Saint-Tropez|Sainte-Maxime)/i);
+    const commune = communeM ? communeM[0] : "Golfe de Saint-Tropez";
+
+    // Extraire heure
+    const timeM = text.match(/(\d{1,2})h(\d{2})?/i);
+    const time = timeM ? `${timeM[1]}h${timeM[2] || "00"}` : "";
+
+    // Extraire année pour garder seulement 2026
+    const yearM = text.match(/2026/);
+    if (!yearM && dateM) continue;
+
+    // Date approximative pour tri (utiliser date trouvée ou aujourd'hui)
+    let eventDate = today;
+    if (dateM) {
+      const months = { janvier: 0, février: 1, fevrier: 1, mars: 2, avril: 3, mai: 4, juin: 5, juillet: 6, aout: 7, août: 7, septembre: 8, octobre: 9, novembre: 10, décembre: 11, decembre: 11 };
+      const monthNum = months[dateM[1].toLowerCase()];
+      const year = parseInt(dateM[2]);
+      // Chercher un jour dans le texte avant le mois
+      const dayM = text.match(/(\d{1,2})\s+(?:janvier|février|fevrier|mars|avril|mai|juin|juillet|aout|août|septembre|octobre|novembre|décembre|decembre)\s+2026/i);
+      const day = dayM ? parseInt(dayM[1]) : 1;
+      if (monthNum !== undefined) {
+        eventDate = new Date(year, monthNum, day);
+      }
+    }
+
+    // Garder seulement les événements d'aujourd'hui ou à venir
+    if (eventDate < today) continue;
+
+    // Description = texte nettoyé sans le titre
+    const desc = text.replace(title, "").replace(/\s+/g, " ").trim().slice(0, 200);
+
+    events.push({
+      title: title.slice(0, 80),
+      commune,
+      time,
+      description: desc,
+      image,
+      url: href,
+      eventDate: eventDate.toISOString().slice(0, 10),
+      isToday: eventDate.toISOString().slice(0, 10) === todayStr
+    });
+  }
+
+  // Trier : aujourd'hui d'abord, puis à venir
+  events.sort((a, b) => a.eventDate.localeCompare(b.eventDate));
+
+  // Dédupliquer par titre
+  const seen = new Set();
+  const unique = events.filter(e => {
+    const key = e.title.slice(0, 40).toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  // Prendre 3 événements : priorité à ceux du jour, sinon les prochains
+  const todayEvents = unique.filter(e => e.isToday).slice(0, 3);
+  const upcoming = unique.filter(e => !e.isToday).slice(0, 3 - todayEvents.length);
+  const result = [...todayEvents, ...upcoming].slice(0, 3);
+
+  golfeEventsCache = result;
+  golfeEventsCacheAt = now;
+  return result;
+}
+
 const server = http.createServer((request, response) => {
   const url = new URL(request.url, `http://${displayHost}:${port}`);
+
+
+  if (url.pathname === "/api/golfe-events" && request.method === "GET") {
+    fetchGolfeEvents().then(events => {
+      response.writeHead(200, {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "public, max-age=3600",
+        "Access-Control-Allow-Origin": "*"
+      });
+      response.end(JSON.stringify(events));
+    }).catch(err => {
+      response.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+      response.end(JSON.stringify([]));
+    });
+    return;
+  }
 
   if (url.pathname === "/api/state") {
     handleStateApi(request, response);
