@@ -62,7 +62,8 @@ function hydrate(saved) {
     events: Array.isArray(saved.events) ? saved.events : fresh.events,
     temperatures: hydrateTemperatures(saved.temperatures, fresh.temperatures),
     services: Array.isArray(saved.services) ? saved.services : fresh.services,
-    messages: Array.isArray(saved.messages) ? saved.messages : fresh.messages
+    messages: Array.isArray(saved.messages) ? saved.messages : fresh.messages,
+    agenda: Array.isArray(saved.agenda) ? saved.agenda : fresh.agenda
   };
 }
 
