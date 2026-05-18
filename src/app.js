@@ -407,8 +407,8 @@ function renderNav() {
     ${navItem("breakfasts", "ti-coffee", "Petits-dejeuners", breakfast)}
     ${navItem("messages", "ti-message-circle", "Messages", unread)}
     ${navItem("tasks", "ti-list-check", "A faire", openTasks)}
-    ${navItem("events", "ti-calendar-star", "Nos animations", activeEventsCount())}
-    ${navItem("agenda", "ti-calendar-event", "Agenda ville")}
+    ${navItem("events", "ti-calendar-star", "Nos animations", activeEventsCount())
+    ${navItem("agenda", "ti-calendar-event", "Agenda ville")}}
     ${navItem("temperatures", "ti-temperature", "Temperatures")}
     ${navItem("payments", "ti-credit-card", "Paiements", paymentDue)}
     ${navItem("analytics", "ti-chart-line", "Chiffres")}
@@ -1105,49 +1105,6 @@ function eventCard(event) {
     </article>
   `;
 }
-
-function renderAgenda() {
-  const items = [...(state.agenda || [])].sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")) || String(a.time || "").localeCompare(String(b.time || "")));
-  document.getElementById("view-agenda").innerHTML = `
-    <div class="section-head" style="margin-top:0;">
-      <div>
-        <div class="section-title">Agenda ville</div>
-        <div class="section-copy">Marches, activites et sorties autour de Sainte-Maxime a partager avec vos clients.</div>
-      </div>
-      <button class="btn gold" data-action="new-agenda"><i class="ti ti-calendar-plus"></i>Nouvelle activite</button>
-    </div>
-    <div class="event-grid">
-      ${items.map(agendaCard).join("") || empty("Aucune activite pour le moment.")}
-    </div>
-  `;
-}
-
-function agendaCard(item) {
-  return `
-    <article class="panel event-card ${item.active ? "" : "is-muted"}">
-      <div class="event-datebox">
-        <span>${esc(eventMonth(item.date))}</span>
-        <b>${esc(eventDay(item.date))}</b>
-      </div>
-      <div class="event-content">
-        <div class="event-topline">
-          <span class="badge ${item.active ? "ready" : "low"}">${item.active ? "Visible client" : "Masque"}</span>
-          <span class="badge read">${esc(item.category || "Sortie locale")}</span>
-          <span class="table-muted">${esc(item.time || "Horaire libre")}</span>
-        </div>
-        <div class="event-title">${esc(item.title)}</div>
-        <div class="event-meta"><i class="ti ti-map-pin"></i>${esc(item.location || "Lieu a preciser")}</div>
-        <p>${esc(item.description || "")}</p>
-        <div class="event-actions">
-          <button class="btn small" data-action="edit-agenda" data-id="${item.id}"><i class="ti ti-edit"></i>Modifier</button>
-          <button class="btn small" data-action="toggle-agenda" data-id="${item.id}"><i class="ti ${item.active ? "ti-eye-off" : "ti-eye"}"></i>${item.active ? "Masquer" : "Afficher"}</button>
-          <button class="btn small danger" data-action="delete-agenda" data-id="${item.id}"><i class="ti ti-trash"></i>Supprimer</button>
-        </div>
-      </div>
-    </article>
-  `;
-}
-
 
 function renderTemperatures() {
   const temperatures = state.temperatures || temperatureDefaults();
@@ -1976,21 +1933,8 @@ function modalBody(type, id) {
       </div>
       <div class="save-row"><span class="hint">Choisis "normal" pour une simple annonce, ou "a inscription" pour afficher le bouton de reservation client.</span><button class="btn primary" data-action="save-event">Valider</button></div>
     `;
-  if (type === "agenda") {
-    const item = id ? (state.agenda || []).find(a => a.id === id) : agendaDefaults();
-    return `
-      <div class="form-grid">
-        ${field("Titre", "modal-title", item.title)}
-        ${field("Categorie", "modal-category", item.category)}
-        ${field("Date", "modal-date", item.date, "date")}
-        ${field("Heure", "modal-time", item.time, "time")}
-        ${field("Lieu", "modal-location", item.location)}
-        ${select("Visible cote client", "modal-active", String(item.active), [["true", "Oui"], ["false", "Non"]])}
-        ${area("Description", "modal-description", item.description)}
-      </div>
-      <div class="save-row"><span class="hint">Ces activites apparaissent dans l'agenda ville du portail client.</span><button class="btn primary" data-action="save-agenda">Valider</button></div>
-    `;
   }
+  if (type === "agenda") { return modalBodyAgenda(id); }
   if (type === "message") {
     const source = id ? state.messages.find(m => m.id === id) : null;
     const item = source ? messageReplyDefaults(source) : messageDefaults();
@@ -2137,30 +2081,6 @@ function saveEventFromModal() {
   upsert("events", payload);
   closeModal();
   persist("Evenement enregistre.");
-}
-
-function saveAgendaFromModal() {
-  const payload = {
-    title: val("modal-title") || "Nouvelle activite",
-    category: val("modal-category") || "Sortie locale",
-    date: val("modal-date"),
-    time: val("modal-time"),
-    location: val("modal-location"),
-    description: val("modal-description"),
-    active: val("modal-active") === "true"
-  };
-  if (!state.agenda) state.agenda = [];
-  upsert("agenda", payload);
-  closeModal();
-  persist("Activite enregistree.");
-}
-
-function toggleAgenda(id) {
-  if (!state.agenda) state.agenda = [];
-  const item = state.agenda.find(a => a.id === id);
-  if (!item) return;
-  item.active = !item.active;
-  persist(item.active ? "Activite visible cote client." : "Activite masquee cote client.");
 }
 
 function saveTemperatures() {
@@ -2644,18 +2564,6 @@ function eventDefaults() {
   };
 }
 
-function agendaDefaults() {
-  return {
-    title: "Nouvelle activite",
-    category: "Sortie locale",
-    date: today(),
-    time: "10:00",
-    location: "Sainte-Maxime",
-    description: "Description de l'activite visible dans l'agenda client.",
-    active: true
-  };
-}
-
 function temperatureDefaults() {
   return { pool: { morning: "", afternoon: "", evening: "" }, air: { morning: "", afternoon: "", evening: "" }, sea: { morning: "", afternoon: "", evening: "" }, updatedAt: "" };
 }
@@ -2750,27 +2658,6 @@ function housekeepingLabel(value) {
 
 function reservationStatus(value) {
   return { confirmed: "Confirmee", inhouse: "En sejour", checkout: "Check-out", raw: "Sans description", left: "Sorti" }[value] || value;
-}
-
-function computedReservationStatus(r) {
-  // Reservations sans dates : on garde le statut manuel
-  if (!r.arrival || !r.departure) return r.status;
-  // Annulees ou sans description : statut manuel
-  if (r.status === "cancelled" || r.status === "raw") return r.status;
-
-  const todayDate = startOfDay(new Date());
-  const arrival = parseDate(r.arrival);
-  const departure = parseDate(r.departure);
-  if (!arrival || !departure) return r.status;
-
-  // Depart = aujourd hui -> check-out
-  if (departure.getTime() === todayDate.getTime()) return "checkout";
-  // Depart passe -> sorti
-  if (departure < todayDate) return "left";
-  // Arrival <= today < departure -> en cours
-  if (arrival <= todayDate && todayDate < departure) return "inhouse";
-  // Arrival dans le futur -> confirme
-  return "confirmed";
 }
 
 function breakfastStatus(value) {
@@ -2966,4 +2853,125 @@ function toast(message) {
   el.classList.add("active");
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove("active"), 2600);
+}
+
+
+// ─── AGENDA VILLE ────────────────────────────────────────────
+function renderAgenda() {
+  const el = document.getElementById("view-agenda");
+  if (!el) return;
+  const items = [...(state.agenda || [])].sort((a, b) =>
+    String(a.date || "").localeCompare(String(b.date || "")) ||
+    String(a.time || "").localeCompare(String(b.time || ""))
+  );
+  el.innerHTML = `
+    <div class="section-head" style="margin-top:0;">
+      <div>
+        <div class="section-title">Agenda ville</div>
+        <div class="section-copy">Marches, activites et sorties autour de Sainte-Maxime.</div>
+      </div>
+      <button class="btn gold" data-action="new-agenda"><i class="ti ti-calendar-plus"></i>Nouvelle activite</button>
+    </div>
+    <div class="event-grid">
+      ${items.map(agendaCard).join("") || empty("Aucune activite pour le moment.")}
+    </div>
+  `;
+}
+
+function agendaCard(item) {
+  const active = item.active !== false;
+  return `
+    <article class="panel event-card ${active ? "" : "is-muted"}">
+      <div class="event-datebox">
+        <span>${esc(eventMonth(item.date))}</span>
+        <b>${esc(eventDay(item.date))}</b>
+      </div>
+      <div class="event-content">
+        <div class="event-topline">
+          <span class="badge ${active ? "ready" : "low"}">${active ? "Visible client" : "Masque"}</span>
+          <span class="badge read">${esc(item.category || "Sortie locale")}</span>
+          <span class="table-muted">${esc(item.time || "Horaire libre")}</span>
+        </div>
+        <div class="event-title">${esc(item.title)}</div>
+        <div class="event-meta"><i class="ti ti-map-pin"></i>${esc(item.location || "Lieu a preciser")}</div>
+        <p>${esc(item.description || "")}</p>
+        <div class="event-actions">
+          <button class="btn small" data-action="edit-agenda" data-id="${item.id}"><i class="ti ti-edit"></i>Modifier</button>
+          <button class="btn small" data-action="toggle-agenda" data-id="${item.id}">
+            <i class="ti ${active ? "ti-eye-off" : "ti-eye"}"></i>${active ? "Masquer" : "Afficher"}
+          </button>
+          <button class="btn small danger" data-action="delete-agenda" data-id="${item.id}"><i class="ti ti-trash"></i>Supprimer</button>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+function modalBodyAgenda(id) {
+  const item = id ? (state.agenda || []).find(a => a.id === id) : agendaDefaults();
+  if (!item) return empty("Activite introuvable.");
+  return `
+    <div class="form-grid">
+      ${field("Titre", "modal-title", item.title)}
+      ${field("Categorie", "modal-category", item.category)}
+      ${field("Date", "modal-date", item.date, "date")}
+      ${field("Heure", "modal-time", item.time, "time")}
+      ${field("Lieu", "modal-location", item.location)}
+      ${select("Visible cote client", "modal-active", String(item.active !== false), [["true", "Oui"], ["false", "Non"]])}
+      ${area("Description", "modal-description", item.description)}
+    </div>
+    <div class="save-row">
+      <span class="hint">Visible dans l'onglet Agenda du portail client.</span>
+      <button class="btn primary" data-action="save-agenda">Valider</button>
+    </div>
+  `;
+}
+
+function saveAgendaFromModal() {
+  const payload = {
+    title: val("modal-title") || "Nouvelle activite",
+    category: val("modal-category") || "Sortie locale",
+    date: val("modal-date"),
+    time: val("modal-time"),
+    location: val("modal-location"),
+    description: val("modal-description"),
+    active: val("modal-active") === "true"
+  };
+  if (!state.agenda) state.agenda = [];
+  upsert("agenda", payload);
+  closeModal();
+  persist("Activite enregistree.");
+}
+
+function toggleAgenda(id) {
+  if (!state.agenda) state.agenda = [];
+  const item = state.agenda.find(a => a.id === id);
+  if (!item) return;
+  item.active = !item.active;
+  persist(item.active ? "Activite visible." : "Activite masquee.");
+}
+
+function agendaDefaults() {
+  return {
+    title: "Nouvelle activite",
+    category: "Sortie locale",
+    date: today(),
+    time: "10:00",
+    location: "Sainte-Maxime",
+    description: "",
+    active: true
+  };
+}
+
+function computedReservationStatus(r) {
+  if (!r.arrival || !r.departure) return r.status;
+  if (r.status === "cancelled" || r.status === "raw") return r.status;
+  const todayDate = startOfDay(new Date());
+  const arrival = parseDate(r.arrival);
+  const departure = parseDate(r.departure);
+  if (!arrival || !departure) return r.status;
+  if (departure.getTime() === todayDate.getTime()) return "checkout";
+  if (departure < todayDate) return "left";
+  if (arrival <= todayDate && todayDate < departure) return "inhouse";
+  return "confirmed";
 }
