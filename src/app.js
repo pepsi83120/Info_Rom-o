@@ -2898,7 +2898,7 @@ function agendaCard(item) {
         <div class="event-actions">
           <button class="btn small" data-action="edit-agenda" data-id="${item.id}"><i class="ti ti-edit"></i>Modifier</button>
           <button class="btn small" data-action="toggle-agenda" data-id="${item.id}">
-            <i class="ti ${active ? "ti-eye-off" : "ti-eye"}"></i>${active ? "Masquer" : "Afficher"}
+            <i class="ti ${active ? 'ti-eye-off' : 'ti-eye'}"></i>${active ? 'Masquer' : 'Afficher'}
           </button>
           <button class="btn small danger" data-action="delete-agenda" data-id="${item.id}"><i class="ti ti-trash"></i>Supprimer</button>
         </div>
