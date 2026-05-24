@@ -2,7 +2,6 @@ services:
   - type: web
     name: villa-romeo-admin
     runtime: node
-    rootDir: APP
     plan: free
     buildCommand: npm install
     startCommand: npm start
