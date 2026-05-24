@@ -1,4 +1,4 @@
-const CACHE_NAME = "villa-romeo-app-v3";
+const CACHE_NAME = "villa-romeo-app-v4";
 const CORE_ASSETS = [
   "/",
   "/index.html",
@@ -32,6 +32,12 @@ self.addEventListener("activate", event => {
 
 self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
+  const url = new URL(event.request.url);
+  if ([".html", ".js", ".css", ".webmanifest"].some(ext => url.pathname.endsWith(ext)) || url.pathname === "/" || url.pathname === "/sw.js") {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   event.respondWith(
     fetch(event.request)
       .then(response => {

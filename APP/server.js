@@ -184,7 +184,12 @@ const server = http.createServer((request, response) => {
       return;
     }
 
-    response.writeHead(200, { "Content-Type": types[path.extname(filePath)] || "text/plain; charset=utf-8" });
+    const ext = path.extname(filePath);
+    const headers = { "Content-Type": types[ext] || "text/plain; charset=utf-8" };
+    if ([".html", ".js", ".css", ".json", ".webmanifest"].includes(ext) || path.basename(filePath) === "sw.js") {
+      headers["Cache-Control"] = "no-store";
+    }
+    response.writeHead(200, headers);
     response.end(content);
   });
 });
